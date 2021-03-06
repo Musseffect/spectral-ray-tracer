@@ -3,7 +3,8 @@
 #include <functional>
 #include <array>
 
-#include "Distribution.h"
+#include "Distribution1D.h"
+#include "Function1D.h"
 
 using rgb = glm::vec3;
 
@@ -21,8 +22,8 @@ public:
 	float operator()(float wavelength) const {
 		assert(coeffs.size() > 0.0);
 		float result = coeffs.front();
+		wavelength *= wavelength;
 		for (int i = 1; i < coeffs.size(); ++i) {
-			wavelength *= wavelength;
 			result += coeffs[i] / wavelength;
 		}
 		return result;
@@ -38,11 +39,11 @@ public:
 	}
 	float operator()(float wavelength) const {
 		float result = 1.0f;
+		wavelength *= wavelength;
 		for (auto coeff: coeffs) {
-			wavelength *= wavelength;
-			result += coeff[0] / (wavelength - coeff[1]);
+			result += coeff[0] * wavelength / (wavelength - coeff[1]);
 		}
-		return result;
+		return std::sqrt(result);
 	}
 };
 
@@ -97,6 +98,15 @@ public:
 	float integral(float min, float max, int samples = 60) const;
 	// wavelength in nanometers
 	virtual float sample(float wavelength) const = 0;
+};
+
+class ConstantSampler : public ColorSampler {
+	float value;
+public:
+	ConstantSampler(float value) : value(value) {}
+	virtual float sample(float wavelength) const override {
+		return value;
+	}
 };
 
 template<typename Functor>

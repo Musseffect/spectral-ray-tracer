@@ -1,6 +1,7 @@
 #pragma once
 #include "Color.h"
 #include "BxDF.h"
+#include "HitInfo.h"
 #include <vector>
 
 
@@ -29,6 +30,11 @@ public:
 
 template <class T>
 using spConstTexture = std::shared_ptr<ConstantTexture<T>>;
+
+template<class T>
+spConstTexture<T> makeConstTexture(const T& value) {
+	return std::make_shared<ConstantTexture<T>>(value);
+}
 
 class TextureMapping2D {
 public:
@@ -89,7 +95,7 @@ class IdealGlassMaterial: public Material {
 	spTexture<spColorSampler> kt;
 	spTexture<spColorSampler> refraction;
 public:
-	IdealGlassMaterial(const spTexture<spColorSampler>& kr, spTexture<spColorSampler>& kt, spTexture<spColorSampler>& refraction)
+	IdealGlassMaterial(const spTexture<spColorSampler>& kr, const spTexture<spColorSampler>& kt, const spTexture<spColorSampler>& refraction)
 	:kr(kr), kt(kt), refraction(refraction)
 	{
 	}
@@ -100,3 +106,9 @@ public:
 		return bsdf;
 	}
 };
+
+using spMaterial = std::shared_ptr<Material>;
+using spIdealGlassMat = std::shared_ptr<IdealGlassMaterial>;
+using spDiffuseMat = std::shared_ptr<DiffuseMaterial>;
+
+spDiffuseMat makeDiffuseMat(const spTexture<spColorSampler>& kr);

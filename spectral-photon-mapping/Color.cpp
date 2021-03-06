@@ -1,15 +1,18 @@
 #include "Color.h"
 
 vec3 XYZToRGB(vec3 xyz) {
-	const mat3 XYZ_to_RGB(2.3706743f, -0.9000405f, -0.4706338f,
+	/*const mat3 XYZ_to_RGB(2.3706743f, -0.9000405f, -0.4706338f,
 		-0.5138850f, 1.4253036f, 0.0885814f,
-		0.0052982f, -0.0146949f, 1.0093968f);
-	return xyz * XYZ_to_RGB;
+		0.0052982f, -0.0146949f, 1.0093968f);*/
+	const mat3 XYZ_to_RGB(3.24f, -1.5372f, -0.4986f ,
+		-0.9689f, 1.8758f, 0.0415f,
+		0.0557f, -0.204f, 1.057f);
+	return glm::transpose(XYZ_to_RGB) * xyz;
 }
 
 vec3 wavelengthToRGB(float wavelength, float intensity) {
-	return glm::max(XYZToRGB(intensity * vec3(xFit_1931(wavelength),
-		yFit_1931(wavelength), zFit_1931(wavelength))), 0.0f);
+	return XYZToRGB(intensity * vec3(xFit_1931(wavelength),
+		yFit_1931(wavelength), zFit_1931(wavelength)));
 }
 
 vec3 spectrumToRGB(const ColorSampler* const sampler, float min, float max, int samples) {

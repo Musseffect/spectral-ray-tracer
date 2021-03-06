@@ -8,6 +8,14 @@ lookAt -> works
 box normals -> works
 cornell box scene transforms -> works
 
+AABB tree for points
+write backward SPPM
+test timings
+test prism scene(128x128, 1mil photons 120 iterations)
+
+
+
+cornell box 256x256 100000 300 iteration 215 sec
 
 todo:
 Forward PT

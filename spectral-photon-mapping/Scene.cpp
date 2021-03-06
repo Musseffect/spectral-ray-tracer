@@ -61,28 +61,22 @@ bool Scene::testVisibility(const Ray& ray) const {
 	}
 	return false;
 }
-
-bool Scene::intersect(const Ray& ray, HitInfo& hitInfo) const {
-	Ray tRay = ray;
-	HitInfo tHitInfo;
-	tHitInfo.t = -1.0;
+bool Scene::intersect(Ray ray, HitInfo& hitInfo) const {
+	hitInfo.t = -1.0;
 	hitInfo.sceneObject = nullptr;
 	hitInfo.light = nullptr;
 	for (const auto& object : objects) {
-		if (object->intersect(tRay, tHitInfo)) {
-			hitInfo= tHitInfo;
+		if (object->intersect(ray, hitInfo)) {
 			hitInfo.sceneObject = object.get();
 			hitInfo.light = nullptr;
-			tRay.tMax = tHitInfo.t;
+			ray.tMax = hitInfo.t;
 		}
 	}
 	for (const auto& light : lights) {
-		if (light->intersect(tRay, tHitInfo)) {
-			hitInfo = tHitInfo;
+		if (light->intersect(ray, hitInfo)) {
 			hitInfo.sceneObject = nullptr;
 			hitInfo.light = light.get();
-			tRay.tMax = tHitInfo.t;
-			break;
+			ray.tMax = hitInfo.t;
 		}
 	}
 	return hitInfo.t >= 0.0;

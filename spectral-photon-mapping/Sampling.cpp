@@ -12,6 +12,7 @@ vec3 Sampling::sampleHemisphere(vec3 dir) {
 	vec3 o1 = normalize(ortho(dir));
 	vec3 o2 = normalize(cross(dir, o1));
 	vec2 r = vec2(Random::random(), Random::random());
+	r.x = r.x * glm::two_pi<float>();
 	float p = sqrt(1.0f - r.y * r.y);
 	return dir * r.y + cos(r.x) * p * o1 + sin(r.x) * p * o2;
 }
@@ -28,6 +29,7 @@ vec2 Sampling::sampleDisk(float radius) {
 
 vec3 Sampling::sampleSphere() {
 	vec2 r = vec2(Random::random(), Random::random());
+	r.x = r.x * glm::two_pi<float>();
 	r.y = 2.0f * r.y - 1.0f;
 	float p = sqrt(1.0f - r.y * r.y);
 	return vec3(cos(r.x) * p, sin(r.x) * p, r.y);
@@ -81,10 +83,12 @@ vec3 Sampling::randomTriangle(const vec3& a, const vec3& b, const vec3& c, float
 
 vec2 Sampling::uniformExponential2D() {
 	vec2 r = vec2(Random::random(), Random::random());
-	return vec2(glm::cos(glm::two_pi<float>() * r.y), glm::sin(glm::two_pi<float>() * r.y)) * glm::sqrt(-2.0 * glm::log(r.x));
+	r.x = r.x * glm::two_pi<float>();
+	return vec2(glm::cos(r.x), glm::sin(r.x)) * glm::sqrt(-2.0 * glm::log(r.y));
 }
 
 vec2 Sampling::uniformExponential2D(float m, float sigma) {
 	vec2 r = vec2(Random::random(), Random::random());
-	return vec2(glm::cos(glm::two_pi<float>() * r.y), glm::sin(glm::two_pi<float>() * r.y)) * glm::sqrt(-2.0 * glm::log(r.x)) * sigma + m;
+	r.x = r.x * glm::two_pi<float>();
+	return vec2(glm::cos(r.x), glm::sin(r.x)) * glm::sqrt(-2.0 * glm::log(r.y)) * sigma + m;
 }

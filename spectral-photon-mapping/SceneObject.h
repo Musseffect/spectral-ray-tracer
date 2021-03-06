@@ -29,9 +29,6 @@ public:
 		bool result = shape->intersect(rayLocal, hitInfo);
 		if (!result)
 			return false;
-		if (hitInfo.t < ray.tMin || hitInfo.t > ray.tMax) {
-			return false;
-		}
 		hitInfo.globalPosition = transform.transformPoint(hitInfo.localPosition);//local to world
 		hitInfo.normal = transform.transformNormal(hitInfo.normal);
 		return true;

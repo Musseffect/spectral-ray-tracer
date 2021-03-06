@@ -36,7 +36,10 @@ struct BBox3D {
 	BBox3D append(const glm::vec3& p);
 	bool intersect(const Ray& ray) const;
 	int maxExtentDirection() const;
+	float area() const;
 };
+
+using AABB = BBox3D;
 
 BBox3D unionOp(const BBox3D& a, const BBox3D& b);
 BBox3D intersectionOp(const BBox3D& a, const BBox3D& b);

@@ -106,7 +106,11 @@ bool BBox3D::intersect(const Ray& ray) const {
 	vec3 tmax = s + o;
 	float tNear = std::max(std::max(tmin.x, tmin.y), tmin.z);
 	float tFar = std::max(std::max(tmax.x, tmax.y), tmax.z);
-	return !(tNear > tFar || tFar < 0.0);
+	if (tNear > tFar)
+		return false;
+	if ((tNear < ray.tMin || tNear > ray.tMax) && (tFar < ray.tMin || tFar > ray.tMax))
+		return false;
+	return true;
 }
 
 BBox3D unionOp(const BBox3D& a, const BBox3D& b) {
@@ -143,4 +147,9 @@ int BBox3D::maxExtentDirection() const {
 	if (_size.y > _size.z)
 		return 1;
 	return 2;
+}
+
+float BBox3D::area() const {
+	vec3 _size = size();
+	return 2.0f * (_size.x * _size.y + _size.y * _size.z + _size.x * _size.z);
 }

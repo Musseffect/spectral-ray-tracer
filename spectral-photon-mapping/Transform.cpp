@@ -14,26 +14,28 @@ vec3 ortho(vec3 v) {
 	return abs(v.x) > abs(v.z) ? vec3(-v.y, v.x, 0.0) : vec3(0.0, -v.z, v.y);
 }
 
-Rigid::Rigid(vec3 t, quat r, vec3 s) : translation(t), rotation(r), scale(s) {}
+Transform::Transform(vec3 t, quat r, vec3 s) : translation(t), rotation(r), scale(s) {}
 
-vec3 Rigid::transform(const vec3& v) const {
+vec3 Transform::transform(const vec3& v) const {
 	return (rotation * (v * scale) * inverse(rotation)) + translation;
 }
 
-vec3 Rigid::inverseTransform(const vec3& v) const {
+vec3 Transform::inverseTransform(const vec3& v) const {
 	return (inverse(rotation) * (v - translation) * rotation) / scale;
 }
 
-mat4 Rigid::toMat4() const {
+mat4 Transform::toMat4() const {
 	return glm::translate(mat4(1.0f), translation) * mat4_cast(rotation) * glm::scale(mat4(1.0f), scale);
 }
 
-Rigid interpolate(const Rigid& a, const Rigid& b, float t) {
-	return Rigid(glm::lerp(a.translation, b.translation, t), glm::slerp(a.rotation, b.rotation, t), glm::lerp(a.scale, b.scale, t));
+Transform interpolate(const Transform& a, const Transform& b, float t) {
+	return Transform(glm::lerp(a.translation, b.translation, t),
+		glm::slerp(a.rotation, b.rotation, t),
+		glm::lerp(a.scale, b.scale, t));
 }
 
 
-Affine::Affine(const Rigid& transform) {
+Affine::Affine(const Transform& transform) {
 	_direct = transform.toMat4();
 	_inverse = glm::inverse(_direct);
 }

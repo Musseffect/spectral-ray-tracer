@@ -4,9 +4,11 @@
 #include "Camera.h"
 #include "Image.h"
 #include "Progress.h"
+#include "Distribution1D.h"
 
 namespace photon_mapping {
-
+	const float ShadowEps = 0.001f;
+	const float OffsetEps = 0.001f;
 	float powerHeuristic(int nf, float fPdf, int ng, float gPdf) {
 		float f = nf * fPdf, g = ng * gPdf;
 		return (f * f) / (f * f + g * g);
@@ -34,27 +36,24 @@ namespace photon_mapping {
 		std::shared_ptr<Scene> scene;
 		std::shared_ptr<Camera> camera;
 		Settings settings;
-	public:
-		float sampleOneLight(const vec3& wo, const HitInfo& hitInfo, const std::shared_ptr<BSDF>& bsdf, float wavelength) const {
-			if (scene->numLights() == 0)
-				return 0.0f;
-			// sample light
-			int lightNum = Random::random(scene->numLights() - 1);
-			const spLight light = scene->light(lightNum);
+	private:
+		float sampleLight(int index, const vec3& wo, const HitInfo& hitInfo, const std::shared_ptr<BSDF>& bsdf, float wavelength) const {
+			const spLight light = scene->light(index);
+			//sample light
 			float lightPdf;
 			vec3 lightPosition;
 			float li = light->sampleLi(hitInfo, wavelength, lightPosition, lightPdf);
 			float ld = 0.0f;
 			if (li > 0.0f && lightPdf > 0.0f) {
 				vec3 wi = lightPosition - hitInfo.globalPosition;
-				float distance = glm::max(glm::length(wi) - 0.0001f, 0.0f);
+				float distance = glm::max(glm::length(wi) - ShadowEps, OffsetEps);
 				wi = glm::normalize(wi);
-				float f = bsdf->f(wo, wi, hitInfo.normal, BxDF::All&(~BxDF::Specular), wavelength) * std::max(glm::dot(wi, hitInfo.normal), 0.0f);
-				float scatteringPdf = bsdf->pdf(wo, wi, hitInfo.normal, BxDF::All&(~BxDF::Specular));
-				if (f > 0.0f) {
+				float f = bsdf->f(wo, wi, hitInfo.normal, BxDF::All, wavelength) * std::abs(glm::dot(wi, hitInfo.normal));
+				float scatteringPdf = bsdf->pdf(wo, wi, hitInfo.normal, BxDF::All);
+				if (f > 0.0f && scatteringPdf > 0.0f) {
 					// if sampled point is visible compute bsdf f()
-					if (scene->testVisibility(Ray(hitInfo.globalPosition, wi, 0.001f, distance))) {
-						f = 0.0;
+					if (scene->testVisibility(Ray(hitInfo.globalPosition, wi, OffsetEps, distance))) {
+						li = 0.0f;
 					} else {
 						if (light->isDelta())
 							ld += f * li / lightPdf;
@@ -63,11 +62,9 @@ namespace photon_mapping {
 							ld += f * li * weight / lightPdf;
 						}
 					}
-
 				}
 			}
-#if 0
-			// sample bsdf with MIS
+			// sample bsdf
 			if (!light->isDelta()) {
 				vec3 wi;
 				float scatteringPdf;
@@ -76,8 +73,8 @@ namespace photon_mapping {
 				f *= glm::max(glm::dot(wi, hitInfo.normal), 0.0f);
 				if (f > 0.0f && scatteringPdf > 0.0f) {
 					float weight = 1.0f;
-					if (sampledType & BxDF::Specular == 0) {
-						lightPdf = light.pdf_li(hitInfo, wi, intersection);
+					if ((sampledType & BxDF::Specular) == 0) {
+						lightPdf = light->pdfLi(hitInfo, wi, scene.get());
 						if (lightPdf == 0.0f)
 							return ld;
 						weight = powerHeuristic(1, scatteringPdf, 1, lightPdf);
@@ -87,30 +84,33 @@ namespace photon_mapping {
 					float li = 0.0f;
 					if (scene->intersect(ray, lightHitInfo)) {
 						if (lightHitInfo.light == light.get()) {
-							li = light->lightEmitted(wi, lightHitInfo.normal, wavelength);
+							li = lightHitInfo.lightEmitted(-wi, wavelength);
 						}
-					}
-					else
+					} else // area ambient light
 						li = light->lightEmitted(ray, wavelength);
 					if (li > 0.0f)
 						ld += f * li * weight / scatteringPdf;
 				}
 			}
-#endif
 			return ld;
 		}
-		/*float sampleAllLights(const HitInfo& hitInfo, float wavelength) const {
-
+		float sampleOneLight(const vec3& wo, const HitInfo& hitInfo, const std::shared_ptr<BSDF>& bsdf, float wavelength) const {
+			if (scene->numLights() == 0)
+				return 0.0f;
+			// sample light
+			int lightIndex = Random::random(scene->numLights() - 1);
+			return sampleLight(lightIndex, wo, hitInfo, bsdf, wavelength) * scene->numLights();
+		}
+		/*
+		float sampleAllLights(const vec3& wo, const HitInfo& hitInfo, const std::shared_ptr<BSDF>& bsdf, float wavelength) const {
+			if (scene->numLights() == 0)
+				return 0.0f;
+			float ld = 0.0f
+			for (int i = 0; i < scene->numLights(); ++i) {
+				ld += sampleLight(i, wo, hitInfo, bsdf, wavelength);
+			}
+			return ld;
 		}*/
-		void setScene(const std::shared_ptr<Scene>& scene) {
-			this->scene = scene;
-		}
-		void setSettings(const Settings& settings) {
-			this->settings = settings;
-		}
-		void setCamera(const std::shared_ptr<Camera>& camera) {
-			this->camera = camera;
-		}
 		std::vector<SpectralPhoton> emitPhotons(float wavelength) {
 			Distribution1D lightPowerDistribution = scene->computeSpectralLightPowerDistribution(wavelength);
 			std::vector<SpectralPhoton> photons;
@@ -125,7 +125,7 @@ namespace photon_mapping {
 				float le = scene->light(lightIndex)->sampleLe(ray, lightNormal, pdfPos, pdfDir, wavelength);
 				if (le == 0.0f || pdfPos == 0.0f || pdfDir == 0.0f)
 					continue;
-				float intensity = glm::max(glm::dot(lightNormal, ray.rd), 0.0f) * le / (lightPdf * pdfPos * pdfDir);
+				float intensity = glm::abs(glm::dot(lightNormal, ray.rd)) * le / (lightPdf * pdfPos * pdfDir);
 				if (intensity == 0.0f)
 					continue;
 				for (int depth = 0; depth < settings.maxDepth; depth++)
@@ -150,25 +150,24 @@ namespace photon_mapping {
 					float lightOut = bsdf->sampleF(-ray.rd, wo, hitInfo.normal, pdf, BxDF::All, sampledType, wavelength);
 					if (lightOut == 0.0f || pdf == 0.0f)
 						break;
-					float newIntensity = intensity * lightOut * glm::max(0.0f, glm::dot(wo, hitInfo.normal)) / pdf;
+					float newIntensity = intensity * lightOut * glm::abs(glm::dot(wo, hitInfo.normal)) / pdf;
 					float q = glm::max(0.0f, 1.0f - newIntensity / intensity);
 					if (Random::random() < q)
 						break;
 					intensity = newIntensity / (1.0f - q);
 					ray.ro = hitInfo.globalPosition;
 					ray.rd = wo;
-					intensity = intensity * lightOut;
 					if (intensity == 0.0f)
 						break;
 				}
 			}
 #ifdef DEBUG
-			if (photons.empty())
-				fprintf(stderr, "Couldn't find any photon intersection\n");
+			/*if (photons.empty())
+				fprintf(stderr, "Couldn't find any photon intersection\n");*/
 #endif
 			return photons;
 		}
-		void gather(const vec2& ndc, float wavelength, const PointLocator<SpectralPhoton>* const pointLocator, PixelInfo& pixel) {
+		void gather(const vec2& ndc, float wavelength, const KdTree<SpectralPhoton>& pointLocator, PixelInfo& pixel) {
 			float luminocity = 1.0f;
 			Ray ray = camera->generateRay(ndc);
 			pixel.m = 0;
@@ -197,11 +196,11 @@ namespace photon_mapping {
 				if (isDiffuse || (isGlossy && depth == settings.maxDepth - 1)) {
 					// accumulate indirect
 					std::vector<int> indices;
-					pointLocator->indicesWithinRadius(hitInfo.globalPosition, pixel.radius, indices);
+					pointLocator.indicesWithinRadius(hitInfo.globalPosition, pixel.radius, indices);
 					for (const auto& index : indices)
 					{
-						const auto& particle = pointLocator->pointAt(index);
-						if (glm::dot(particle.normal, hitInfo.normal) < 0.0)
+						const auto& particle = pointLocator.pointAt(index);
+						if (glm::dot(particle.normal, hitInfo.normal) < 0.0 || hitInfo.sceneObject != particle.object)
 							continue;
 						phi += particle.power * bsdf->f(wo, particle.wi, particle.normal, BxDF::Type::All, wavelength);
 						pixel.m++;
@@ -231,6 +230,16 @@ namespace photon_mapping {
 			pixel.indirectLight = (pixel.indirectLight + wavelengthToRGB(wavelength, luminocity * phi)) * (newRadius * newRadius) / (pixel.radius * pixel.radius);
 			pixel.radius = newRadius;
 			pixel.n = newN;
+		}
+	public:
+		void setScene(const std::shared_ptr<Scene>& scene) {
+			this->scene = scene;
+		}
+		void setSettings(const Settings& settings) {
+			this->settings = settings;
+		}
+		void setCamera(const std::shared_ptr<Camera>& camera) {
+			this->camera = camera;
 		}
 #if 0
 		Image<rgb> renderForward(int width, int height) {
@@ -272,17 +281,18 @@ namespace photon_mapping {
 
 			vec2 resolution(width, height);
 			for (int k = 0; k < settings.iterations; k++) {
-				float wavelength = Random::random(400.f, 700.f);
-				// todo: float wavelength = glm::mix(380.0f, 720.0f, Random::sampleStratified(60));
+				//float wavelength = Random::random(400.f, 700.f);
+				// stratified sampling
+				float wavelength = glm::mix(400.f, 700.0f, Sampling::sampleStratified(60));
 				auto photons = emitPhotons(wavelength);
-				KdTree<SpectralPhoton> pointLocator(photons.begin(), photons.end(), 8);
+				KdTree<SpectralPhoton> pointLocator(photons.begin(), photons.end(), 1, 8);
 				for (int j = 0; j < height; j++)
 				{
 					for (int i = 0; i < width; i++)
 					{
 						vec2 aaShift = Sampling::sampleDisk(1.0f);
-						vec2 ndc = (2.0f * vec2(i, j) - resolution + vec2(1.0f)) / resolution;
-						gather(ndc, wavelength, &pointLocator, pixelInfos[i + j * width]);
+						vec2 ndc = (2.0f * vec2(i, j) + aaShift - resolution + vec2(1.0f)) / resolution;
+						gather(ndc, wavelength, pointLocator, pixelInfos[i + j * width]);
 					}
 				}
 				progress->emitProgress(k / float(settings.iterations));
@@ -291,11 +301,13 @@ namespace photon_mapping {
 			{
 				for (int i = 0; i < width; i++)
 				{
+					float N = settings.iterations * std::max(settings.photonsPerIteration, 1);
 					const PixelInfo& pixelInfo = pixelInfos[i + j * width];
-					image(i, j) = pixelInfo.directLight / settings.iterations * 0.0f +
-						pixelInfo.indirectLight / (glm::max(pixelInfo.n, 1.0f) * pixelInfo.radius * pixelInfo.radius * glm::pi<float>());
+					image(i, j) = pixelInfo.directLight / settings.iterations +
+						pixelInfo.indirectLight / (N * pixelInfo.radius * pixelInfo.radius * glm::pi<float>());
 				}
 			}
+			progress->emitProgress(1.0f);
 			return image;
 		}
 	};

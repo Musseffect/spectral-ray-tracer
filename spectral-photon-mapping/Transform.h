@@ -15,17 +15,17 @@ using quat = glm::quat;
 vec3 ortho(vec3 v);
 
 // Done
-struct Rigid {
+struct Transform {
 	vec3 translation;
 	quat rotation;
 	vec3 scale;
-	Rigid(vec3 t, quat r = quat(), vec3 s = vec3(1.0f));
+	Transform(vec3 t, quat r = quat(), vec3 s = vec3(1.0f));
 	vec3 transform(const vec3& v) const;
 	vec3 inverseTransform(const vec3& v) const;
 	mat4 toMat4() const;
 };
 
-Rigid interpolate(const Rigid& a, const Rigid& b, float t);
+Transform interpolate(const Transform& a, const Transform& b, float t);
 
 class Affine {
 	mat4 _direct;
@@ -34,7 +34,7 @@ public:
 	static mat3 buildCoordSystemTransform(vec3 zDir);
 	static mat4 buildCoordSystemTransform(vec3 translation, vec3 zDir);
 	friend Affine interpolate(const Affine& a, const Affine& b, float t);
-	Affine(const Rigid& transform);
+	Affine(const Transform& transform);
 	Affine(const mat4& direct);
 	Affine(const mat4& direct, const mat4& inverse);
 	Affine inverse() const;

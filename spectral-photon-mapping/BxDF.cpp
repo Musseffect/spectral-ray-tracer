@@ -1,7 +1,9 @@
 #include "BxDF.h"
 #include "Sampling.h"
 
-
+bool sameHemisphere(const vec3& a, const vec3& b, const vec3 normal) {
+	return ((glm::dot(a, normal) >= 0.0f) == (glm::dot(b, normal) >= 0.0f));
+}
 
 BxDF::BxDF(int type) :type(type) {}
 
@@ -16,7 +18,7 @@ bool BxDF::hasExactType(int type) const {
 }
 
 float BxDF::pdf(const vec3& wo, const vec3& wi, const vec3& normal) const {
-	return glm::dot(wo, wi) > 0.0f ? glm::max(glm::dot(wi, normal), 0.0f) : 0.0f;
+	return sameHemisphere(wo, wi, normal) > 0.0f ? glm::abs(glm::dot(wi, normal)) * glm::one_over_pi<float>() : 0.0f;
 }
 
 float BxDF::sampleF(const vec3& wo, vec3& wi, const vec3& normal, float& pdf, int& sampledType, float wavelength) const {
@@ -24,7 +26,7 @@ float BxDF::sampleF(const vec3& wo, vec3& wi, const vec3& normal, float& pdf, in
 	wi = Sampling::sampleCosWeighted(normal);
 	if (glm::dot(wo, normal) < 0.0f)
 		wi *= -1.0f;
-	pdf = glm::max(0.0f, glm::dot(wi, normal));
+	pdf = BxDF::pdf(wo, wi, normal);
 	return f(wi, wo, normal, wavelength);
 }
 
@@ -49,7 +51,7 @@ float SpecularReflection::f(const vec3& wi, const vec3& wo, const vec3& normal, 
 }
 float SpecularReflection::sampleF(const vec3& wo, vec3& wi, const vec3& normal, float& pdf, int& sampledType, float wavelength) const {
 	sampledType = type;
-	wi = glm::reflect(wo, normal);
+	wi = glm::reflect(-wo, normal);
 	if (glm::dot(wo, normal) < 0.0f)
 		wi *= -1.0f;
 	pdf = 1.0f;
@@ -73,16 +75,26 @@ float IdealGlass::sampleF(const vec3& wo, vec3& wi, const vec3& normal, float& p
 	float sum = refl + transm;
 	pdf = 1.0f;
 	if (Random::random() * sum < refl) {
-		wi = glm::reflect(wo, normal);
+		sampledType = Specular | Reflection;
+		wi = glm::reflect(-wo, normal);
 		if (glm::dot(wo, normal) < 0.0f)
 			wi *= -1.0f;
 	}
 	else {
+		sampledType = Specular | Transmission;
 		float index = refractionIndex->sample(wavelength);
 		float eta = index;
-		if (glm::dot(wo, normal) < 0.0f)
+		vec3 n = normal;
+		float cosTheta = glm::dot(wo, normal);
+		if (cosTheta < 0.0f) {
+			n *= -1.0f;
 			eta = 1.0f / index;
-		wi = glm::refract(wo, normal, eta);
+		}
+		if (eta * eta * (1.0f - cosTheta * cosTheta) >= 1.0) {
+			sampledType = Specular | Reflection;
+			wi = glm::reflect(-wo, n);
+		} else
+			wi = glm::refract(-wo, n, eta);
 	}
 	return sum != 0.0 ? 1.0f : 0.0f;
 }
@@ -160,16 +172,13 @@ float BSDF::f(const vec3& wo, const vec3& wi, const vec3& normal, int matchTypes
 }
 float BSDF::pdf(const vec3& wo, const vec3& wi, const vec3& normal, int matchTypes) const {
 	float pdf = 0.0f;
-	int matchingComponents = numComponents(matchTypes);
-	if (matchingComponents == 0)
-		return 0.0f;
-	if (!(matchTypes & BxDF::Specular))
-	{
-		for (int i = 0; i < bxdfs.size(); ++i)
-			if (bxdfs[i]->hasType(matchTypes)) {
-				matchingComponents++;
-				pdf += bxdfs[i]->pdf(wo, wi, normal);
-			}
-	}
-	return pdf / matchingComponents;
+	int matchingComponents = 0;
+	for (int i = 0; i < bxdfs.size(); ++i)
+		if (bxdfs[i]->hasType(matchTypes)) {
+			matchingComponents++;
+			pdf += bxdfs[i]->pdf(wo, wi, normal);
+		}
+	if (matchingComponents)
+		return pdf / matchingComponents;
+	return 0.0f;
 }

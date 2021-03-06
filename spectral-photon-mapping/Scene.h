@@ -18,5 +18,7 @@ public:
 	Distribution1D computeLightPowerDistribution() const;
 	bool testVisibility(const Ray& ray) const;
 	//todo: add aabb tree or something like that
-	bool intersect(const Ray& ray, HitInfo& hitInfo) const;
+	bool intersect(Ray ray, HitInfo& hitInfo) const;
 };
+
+using spScene = std::shared_ptr<Scene>;

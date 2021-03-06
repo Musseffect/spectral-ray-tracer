@@ -16,6 +16,9 @@ public:
 		:cameraToWorld(cameraToWorld), aspectRatio(aspectRatio)
 	{}
 	virtual Ray generateRay(const vec2& ndc) const = 0;
+	virtual Ray sampleRay(const vec2& ndc) const {
+		throw std::runtime_error("Not implemented");
+	}
 };
 
 // todo: test

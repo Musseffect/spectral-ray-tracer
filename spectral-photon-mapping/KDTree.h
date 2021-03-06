@@ -29,16 +29,12 @@ class PointLocator {
 protected:
 	std::vector<Point> points;
 public:
-	virtual std::vector<Point> pointsWithinRadius(const vec3& center, float radius) const = 0;
-	virtual void indicesWithinRadius(const vec3& center, float radius, std::vector<int>& result) const = 0;
 	const Point& pointAt(int index) const {
 		assert(index >= 0 && index < points.size());
 		return points[index];
 	}
 	bool isEmpty() const {
 		return points.empty();
-	}
-	virtual ~PointLocator() {
 	}
 };
 
@@ -59,7 +55,7 @@ public:
 		bounds.append(glm::max(bounds.center() + 0.0001f, bounds.max()));
 		bounds.append(glm::min(bounds.center() - 0.0001f, bounds.min()));
 	}
-	virtual std::vector<Point> pointsWithinRadius(const vec3& center, float radius) const override {
+	std::vector<Point> pointsWithinRadius(const vec3& center, float radius) const {
 		if (this->isEmpty())
 			return {};
 		float dist = bounds.outerDistance(center);
@@ -75,7 +71,7 @@ public:
 		}
 		return std::move(result);
 	}
-	virtual void indicesWithinRadius(const vec3& center, float radius, std::vector<int>& result) const override {
+	void indicesWithinRadius(const vec3& center, float radius, std::vector<int>& result) const {
 		if (this->isEmpty())
 			return;
 		float dist = bounds.outerDistance(center);
@@ -92,6 +88,10 @@ public:
 		}
 	}
 };
+
+
+
+
 //#define USE_PRESORT
 template<class Point>
 class KdTree: public PointLocator<Point> {
@@ -105,8 +105,8 @@ class KdTree: public PointLocator<Point> {
 		unsigned int splitType : 2, leftId : 30;
 		unsigned int rightId;
 		float splitCoord;
-		Bbox3D bbox;
-		KdNode(unsigned int splitType, unsigned int leftId, unsigned int rightId, float splitCoord, Bbox3D bbox)
+		BBox3D bbox;
+		KdNode(unsigned int splitType, unsigned int leftId, unsigned int rightId, float splitCoord, const BBox3D& bbox)
 			:splitType(splitType), leftId(leftId), rightId(rightId), splitCoord(splitCoord), bbox(bbox)
 		{
 		}
@@ -143,7 +143,7 @@ class KdTree: public PointLocator<Point> {
 		const float Eps = 0.0001f;
 		if (parentDistanceSqr > radiusSqr + Eps)
 			return;
-		if (currentBBox.isInBall(center, radiusSqr + Eps)) {
+		if (current.bbox.isInBall(center, radiusSqr)) {
 			appendNodes(current, result);
 			return;
 		}
@@ -172,11 +172,11 @@ class KdTree: public PointLocator<Point> {
 		pointsWithinRadius(*childs[swap], childBBoxes[swap], center, radiusSqr, firstNodeDistanceSqr, result);
 		pointsWithinRadius(*childs[1 - swap], childBBoxes[1 - swap], center, radiusSqr, secondNodeDistanceSqr, result);
 	}
-	void indicesWithinRadius(const KdNode& current, const BBox3D& currentBBox, const vec3& center, float radiusSqr, float parentDistanceSqr, std::vector<int>& result) const {
+	void indicesWithinRadius(const KdNode& current, const vec3& center, float radiusSqr, float parentDistanceSqr, std::vector<int>& result) const {
 		const float Eps = 0.0001f;
 		if (parentDistanceSqr > radiusSqr + Eps)
 			return;
-		if (currentBBox.isInBall(center, radiusSqr)) {
+		if (current.bbox.isInBall(center, radiusSqr)) {
 			appendNodes(current, result);
 			return;
 		}
@@ -189,54 +189,48 @@ class KdTree: public PointLocator<Point> {
 			}
 			return;
 		}
-		const KdNode* const childs[2] = { &nodes[current.leftId], &nodes[current.rightId] };
-
-		BBox3D childBBoxes[2] = { currentBBox, currentBBox };
-		const float cuttingValue = currentBBox._min[splitType] + current.splitCoord * (currentBBox._max[splitType] - currentBBox._min[splitType]);
-		childBBoxes[0]._max[splitType] = cuttingValue;
-		childBBoxes[1]._min[splitType] = childBBoxes[0]._max[splitType];
-
-		const int swap = center[splitType] < cuttingValue;
-
-		const float firstNodeDistanceSqr = parentDistanceSqr;
-		const float widthLo = childBBoxes[swap]._max[splitType] - childBBoxes[swap]._min[splitType];
-		const float distLo = std::max(0.0f, std::abs(center[splitType] - (childBBoxes[swap]._max[splitType] + childBBoxes[swap]._min[splitType]) * 0.5f) - widthLo * 0.5f);
-		const float secondNodeDistanceSqr = parentDistanceSqr - distLo * distLo + std::pow(cuttingValue - center[splitType], 2.0f);
-		indicesWithinRadius(*childs[swap], childBBoxes[swap], center, radiusSqr, firstNodeDistanceSqr, result);
-		indicesWithinRadius(*childs[1 - swap], childBBoxes[1 - swap], center, radiusSqr, secondNodeDistanceSqr, result);
+		const float firstNodeDistanceSqr = nodes[current.leftId].bbox.outerSqrDistance(center);
+		const float secondNodeDistanceSqr = nodes[current.rightId].bbox.outerSqrDistance(center);
+		indicesWithinRadius(nodes[current.leftId], center, radiusSqr, firstNodeDistanceSqr, result);
+		indicesWithinRadius(nodes[current.rightId], center, radiusSqr, secondNodeDistanceSqr, result);
 	}
-	void build(typename const std::vector<Point>::iterator& begin, typename const std::vector<Point>::iterator& end, int depth, int startIndex, const BBox3D& bounds, int nodeIndex) {
+	void build(typename const std::vector<Point>::iterator& begin, typename const std::vector<Point>::iterator& end, int depth, const BBox3D& bounds, int nodeIndex) {
 		int size = std::distance(begin, end);
 		assert(size != 0);
 		int splitCoord = bounds.maxExtentDirection();
-		if (depth <= 1 || bounds.size()[splitCoord] < 0.0001f || size == 1 || size <= maxPointsInNode) {
-			int start = startIndex;
+		if (depth <= 1 || bounds.size()[splitCoord] < 0.0001f || size <= maxPointsInNode) {
+			int startIndex = std::distance(this->points.begin(), begin);
 			int endIndex = startIndex + size;
+			BBox3D bbox;
+			for (int i = startIndex; i < endIndex; ++i)
+				bbox.append(this->points[i].coords());
 			nodes[nodeIndex].splitType = 3;
-			nodes[nodeIndex].leftId = start;
+			nodes[nodeIndex].leftId = startIndex;
 			nodes[nodeIndex].rightId = endIndex;
+			nodes[nodeIndex].bbox = bbox;
 			return;
 		}
-		std::sort(begin, end,
+		const int median = size / 2;
+		typename std::vector<Point>::iterator medianIt = std::next(begin, median);
+		std::nth_element(begin, medianIt, end,
 			[splitCoord](const Point& a, const Point& b) {
 				return a.coords()[splitCoord] < b.coords()[splitCoord];
 		});
-		const int median = size / 2;
-		typename std::vector<Point>::iterator medianIt = std::next(begin, median);
 		BBox3D childBounds[2] = { bounds, bounds };
 		childBounds[0]._max[splitCoord] = medianIt->coords()[splitCoord];
 		childBounds[1]._min[splitCoord] = medianIt->coords()[splitCoord];
 		const float splitValue = (medianIt->coords()[splitCoord] - bounds._min[splitCoord]) / bounds.size()[splitCoord];
 		int leftId = nodes.size();
-		nodes.emplace_back(0, 0, -1, 0.5f);
+		nodes.emplace_back(0, 0, -1, 0.5f, BBox3D());
 		int rightId = nodes.size();
-		nodes.emplace_back(0, 0, -1, 0.5f);
+		nodes.emplace_back(0, 0, -1, 0.5f, BBox3D());
 		nodes[nodeIndex].leftId = leftId;
 		nodes[nodeIndex].rightId = rightId;
 		nodes[nodeIndex].splitType = splitCoord;
 		nodes[nodeIndex].splitCoord = splitValue;
-		build(begin, medianIt, depth - 1, startIndex, childBounds[0], leftId);
-		build(medianIt, end, depth - 1, startIndex + median, childBounds[1], rightId);
+		nodes[nodeIndex].bbox = bounds;
+		build(begin, medianIt, depth - 1, childBounds[0], leftId);
+		build(medianIt, end, depth - 1, childBounds[1], rightId);
 	}
 public:
 	template<class Iterator>
@@ -256,10 +250,10 @@ public:
 		bounds.append(glm::min(bounds.center() - 0.0001f, bounds.min()));
 		if (maxDepth <= 0)
 			maxDepth = std::round(8 + 1.3f * glm::log2(this->points.size()));
-		nodes.emplace_back(0, 0, -1, 0.0f);
-		build(this->points.begin(), this->points.end(), maxDepth, 0, bounds, 0);
+		nodes.emplace_back(0, 0, -1, 0.0f, bounds);
+		build(this->points.begin(), this->points.end(), maxDepth, bounds, 0);
 	}
-	virtual std::vector<Point> pointsWithinRadius(const vec3& center, float radius) const override {
+	std::vector<Point> pointsWithinRadius(const vec3& center, float radius) const {
 		if (this->isEmpty())
 			return {};
 		const float distSqr = bounds.outerSqrDistance(center);
@@ -267,11 +261,11 @@ public:
 		pointsWithinRadius(nodes[0], bounds, center, radius, distSqr, result);
 		return std::move(result);
 	}
-	virtual void indicesWithinRadius(const vec3& center, float radius, std::vector<int>& result) const override {
+	void indicesWithinRadius(const vec3& center, float radius, std::vector<int>& result) const {
 		if (this->isEmpty())
 			return;
 		const float distSqr = bounds.outerSqrDistance(center);
-		indicesWithinRadius(nodes[0], bounds, center, radius * radius, distSqr, result);
+		indicesWithinRadius(nodes[0], center, radius * radius, distSqr, result);
 	}
 };
 
@@ -304,7 +298,7 @@ public:
 			indices[index(coords.x, coords.y, coords.z)].push_back(i);
 		}
 	}
-	virtual std::vector<Point> pointsWithinRadius(const vec3& center, float radius) const override {
+	std::vector<Point> pointsWithinRadius(const vec3& center, float radius) const {
 		if (this->isEmpty())
 			return {};
 		float sqrDist = bounds.outerSqrDistance(center);
@@ -345,7 +339,7 @@ public:
 		}
 		return std::move(result);
 	}
-	virtual void indicesWithinRadius(const vec3& center, float radius, std::vector<int>& result) const override {
+	void indicesWithinRadius(const vec3& center, float radius, std::vector<int>& result) const {
 		if (this->isEmpty())
 			return;
 		float sqrDist = bounds.outerSqrDistance(center);
@@ -381,5 +375,149 @@ public:
 				}
 			}
 		}
+	}
+};
+
+template<class Point>
+class AABBTree {
+	struct Node {
+		AABB aabb;
+		enum Type {
+			Leaf = 0,
+			Inter = 1
+		};
+		unsigned int type:1, firstChild:31;
+		int secondChild;
+	};
+	const int maxPointsInLeaf;
+	std::vector<Node> nodes;
+	std::vector<Point> points;
+	void appendPoints(const Node& currentNode, std::vector<Point>& result) const {
+		if (currentNode.type == Node::Type::Leaf) {
+			for (int i = currentNode.firstChild; i < currentNode.secondChild; ++i)
+				result.push_back(points[i]);
+			return;
+		}
+		appendPoints(nodes[currentNode.firstChild], result);
+		appendPoints(nodes[currentNode.secondChild], result);
+	}
+	void appendIndices(const Node& currentNode, std::vector<int>& result) const {
+		if (currentNode.type == Node::Type::Leaf) {
+			for (int i = currentNode.firstChild; i < currentNode.secondChild; ++i)
+				result.push_back(i);
+			return;
+		}
+		appendIndices(nodes[currentNode.firstChild], result);
+		appendIndices(nodes[currentNode.secondChild], result);
+	}
+	void pointsWithinRadius(const Node& currentNode, const vec3& center, float radiusSqr, std::vector<Point>& result) const {
+		const float Eps = 0.0001f;
+		if (currentNode.aabb.outerSqrDistance(center) > radiusSqr + Eps)
+			return;
+		if (currentNode.aabb.isInBall(center, radiusSqr)) {
+			appendPoints(currentNode, result);
+			return;
+		}
+		if (currentNode.type == Node::Type::Leaf) {
+			for (int i = currentNode.firstChild; i < currentNode.secondChild; ++i) {
+				const auto& point = points[i];
+				if (glm::distance2(point.coords(), center) <= radiusSqr)
+					result.push_back(point);
+			}
+			return;
+		}
+		pointsWithinRadius(nodes[currentNode.firstChild], center, radiusSqr, result);
+		pointsWithinRadius(nodes[currentNode.secondChild], center, radiusSqr, result);
+	}
+	void indicesWithinRadius(const Node& currentNode, const vec3& center, float radiusSqr, std::vector<int>& result) const {
+		const float Eps = 0.0001f;
+		if (currentNode.aabb.outerSqrDistance(center) > radiusSqr + Eps)
+			return;
+		if (currentNode.aabb.isInBall(center, radiusSqr)) {
+			appendIndices(currentNode, result);
+			return;
+		}
+		if (currentNode.type == Node::Type::Leaf) {
+			for (int i = currentNode.firstChild; i < currentNode.secondChild; ++i) {
+				const auto& point = points[i];
+				if (glm::length2(point.coords() - center) <= radiusSqr)
+					result.push_back(i);
+			}
+			return;
+		}
+		indicesWithinRadius(nodes[currentNode.firstChild], center, radiusSqr, result);
+		indicesWithinRadius(nodes[currentNode.secondChild], center, radiusSqr, result);
+	}
+	void build(typename const std::vector<Point>::iterator& begin, typename const std::vector<Point>::iterator& end, const AABB& aabb, int depth, int nodeIndex) {
+		int size = std::distance(begin, end);
+		int splitCoord = aabb.maxExtentDirection();
+		if (size <= maxPointsInLeaf || depth <= 1 || aabb.size()[splitCoord] < 0.0001f) {
+			int start = std::distance(points.begin(), begin);
+			int end = start + size;
+			nodes[nodeIndex].type = Node::Type::Leaf;
+			nodes[nodeIndex].firstChild = start;
+			nodes[nodeIndex].secondChild = end;
+			nodes[nodeIndex].aabb = aabb;
+			return;
+		}
+		const int median = size / 2;
+		typename std::vector<Point>::iterator splitIt = std::next(begin, median);
+		std::nth_element(begin, splitIt, end,
+			[splitCoord](const Point& a, const Point& b) {
+			return a.coords()[splitCoord] < b.coords()[splitCoord];
+		});
+		AABB firstAABB;
+		AABB secondAABB;
+		for (auto it = begin; it != splitIt; ++it) {
+			firstAABB.append(it->coords());
+		}
+		for (auto it = splitIt; it != end; ++it) {
+			secondAABB.append(it->coords());
+		}
+		int firstId = nodes.size();
+		nodes.push_back(Node());
+		int secondId = nodes.size();
+		nodes.push_back(Node());
+		nodes[nodeIndex].firstChild = firstId;
+		nodes[nodeIndex].secondChild = secondId;
+		nodes[nodeIndex].type = Node::Type::Inter;
+		nodes[nodeIndex].aabb = aabb;
+		build(begin, splitIt, firstAABB, depth - 1, firstId);
+		build(splitIt, end, secondAABB, depth - 1, secondId);
+	}
+public:
+	template<class Iterator>
+	AABBTree(Iterator begin, Iterator end, int maxPointsInLeaf = 1, int maxDepth = 8):maxPointsInLeaf(std::max(maxPointsInLeaf, 1)){
+		int size = std::distance(begin, end);
+		if (size == 0)
+			return;
+		points.resize(size);
+		int index = 0;
+		AABB aabb;
+		for (Iterator it = begin; it != end; ++it) {
+			points[index] = *it;
+			aabb.append(it->coords());
+			++index;
+		}
+		aabb.append(glm::max(aabb.center() + 0.0001f, aabb.max()));
+		aabb.append(glm::min(aabb.center() - 0.0001f, aabb.min()));
+		if (maxDepth <= 0)
+			maxDepth = std::round(8 + 1.3f * glm::log2(this->points.size()));
+		nodes.push_back(Node());
+		build(points.begin(), points.end(), aabb, maxDepth, 0);
+	}
+	std::vector<Point> pointsWithinRadius(const vec3& center, float radius) const {
+		if (isEmpty())
+			return {};
+		std::vector<Point> result;
+		pointsWithinRadius(nodes[0], center, radius * radius, result);
+		return std::move(result);
+	}
+	void indicesWithinRadius(const vec3& center, float radius, std::vector<int>& result) const {
+		if (!isEmpty())
+			indicesWithinRadius(nodes[0], center, radius * radius, result);
+	}
+	bool isEmpty() const {
+		return points.empty();
 	}
 };

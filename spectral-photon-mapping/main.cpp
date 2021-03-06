@@ -6,6 +6,13 @@
 #include "Tracer.h"
 #include "Camera.h"
 #include "Timer.h"
+#include "Sphere.h"
+#include "Disk.h"
+#include "Rect.h"
+#include "Triangle.h"
+#include "Box.h"
+#include "Mesh.h"
+#include "Function1D.h"
 #include <stdio.h>
 #include <fstream>
 #include <time.h>
@@ -55,7 +62,7 @@ std::shared_ptr<Scene> createPrismScene() {
 	std::shared_ptr<SceneObject> floor = std::make_shared<SceneObject>(
 		floorShape,
 		whiteDiffuse,
-		Affine(Rigid(vec3(0.0f),
+		Affine(Transform(vec3(0.0f),
 			quat(),
 			vec3(100.0f)
 		))
@@ -67,14 +74,16 @@ std::shared_ptr<Scene> createPrismScene() {
 
 	spColorSampler lightColorSpectrum = std::make_shared<BlackBodyColorSampler>(6000.0f, 10.0f);
 	std::shared_ptr<Light> light = std::make_shared<RectDirectionalLight>(
-		Affine(Rigid(vec3(-08.0f, 10.0f, 0.0f),
+		Affine(Transform(vec3(-8.0f, 10.0f, 0.0f),
 			glm::angleAxis(glm::radians(90.0f), vec3(0.0f, 0.0f, 1.0f)),
-			vec3(2.0f, 1.0f, 20.0f))),
-		lightColorSpectrum);
+			vec3(1.0f, 1.0f, 1.0f))),
+		lightColorSpectrum,
+		vec2(2.0f, 20.0f)
+		);
 	std::shared_ptr<SceneObject> prism = std::make_shared<SceneObject>(
 		prismShape,
 		glass,
-		Affine(Rigid(vec3(0.0f, 15.0f, 0.0f),
+		Affine(Transform(vec3(0.0f, 15.0f, 0.0f),
 			quat(),
 			vec3(10.0f, 30.0f, 10.0f)
 		))
@@ -83,6 +92,21 @@ std::shared_ptr<Scene> createPrismScene() {
 	scene->addObject(prism);
 	scene->addLight(light);
 	return scene;
+}
+
+std::shared_ptr<Scene> testMISScene() {
+	throw std::runtime_error("Not impelmented");
+}
+
+std::shared_ptr<Scene> furnaceTestScene() {
+	throw std::runtime_error("Not impelmented");
+	/*spScene scene = std::make_shared<Scene>();
+	spShape sphere = std::make_shared<Sphere>();
+	spShape sphereLight = std::make_shared<Sphere>(vec3(1.0f), 10.0f);
+	spSceneObject sphereObject = std::make_shared<SceneObject>();
+	scene->addObject();
+	scene->addLight();
+	*/
 }
 
 // Done
@@ -102,10 +126,12 @@ std::shared_ptr<Scene> createCornwellBox() {
 	std::shared_ptr<GridFunction1D> lightSpectrum(new GridFunction1D(400.0f, 700.0f,
 		{ 0.0f, 8.0f, 15.6f, 18.4f }
 	));
+	lightSpectrum->scale(1.0f);
 	spSpectrumSampler whiteColorSpectrum(new SpectrumSampler(whiteSpectrum));
 	spSpectrumSampler greenColorSpectrum(new SpectrumSampler(greenSpectrum));
 	spSpectrumSampler redColorSpectrum(new SpectrumSampler(redSpectrum));
 	spSpectrumSampler lightColorSpectrum(new SpectrumSampler(lightSpectrum));
+	std::shared_ptr<ColorSampler> black(new ConstantSampler(0.0f));
 #ifdef FULL_SPECTRAL_RGB
 	std::shared_ptr<RGBColorSampler> white(new RGBColorSampler(spectrumToRGB(whiteColorSpectrum.get(), 400.0f, 700.0f, 60) * 3.0f / 300.0f));
 	std::shared_ptr<RGBColorSampler> green(new RGBColorSampler(spectrumToRGB(greenColorSpectrum.get(), 400.0f, 700.0f, 60) * 3.0f / 300.0f));
@@ -132,74 +158,123 @@ std::shared_ptr<Scene> createCornwellBox() {
 	std::shared_ptr<ConstantTexture<ColorSampler>> redTexture = std::make_shared<ConstantTexture<ColorSampler>>(std::make_shared<RGBColorSampler>(vec3(1.0f, 0.0f, 0.0f)));
 	std::shared_ptr<ConstantTexture<ColorSampler>> greenTexture = std::make_shared<ConstantTexture<ColorSampler>>(std::make_shared<RGBColorSampler>(vec3(0.0f, 1.0f, 0.0f)));
 #endif
-	std::shared_ptr<Scene> scene = std::make_shared<Scene>();
-	std::shared_ptr<Shape> rect = std::make_shared<Rect>();//Done
-	std::shared_ptr<Shape> box = std::make_shared<Box>();//Done
-	std::shared_ptr<Shape> disc = std::make_shared<Disc>();//Done
+	spScene scene = std::make_shared<Scene>();
+	spShape sphere = std::make_shared<Sphere>();
+	spShape rect = std::make_shared<Rect>();//Done
+	spShape box = std::make_shared<Box>();//Done
+	spShape disc = std::make_shared<Disc>();//Done
 	//std::shared_ptr<ConstantTexture<ColorSampler>> greyTexture = std::make_shared<ConstantTexture<ColorSampler>>(std::make_shared<RGBColorSampler>(vec3(0.15f)));
-	std::shared_ptr<ConstantTexture<spColorSampler>> whiteTexture = std::make_shared<ConstantTexture<spColorSampler>>(white);
-	std::shared_ptr<ConstantTexture<spColorSampler>> redTexture = std::make_shared<ConstantTexture<spColorSampler>>(green);
-	std::shared_ptr<ConstantTexture<spColorSampler>> greenTexture = std::make_shared<ConstantTexture<spColorSampler>>(red);
-	std::shared_ptr<Material> whiteDiffuse = std::make_shared<DiffuseMaterial>(whiteTexture);
-	std::shared_ptr<Material> redDiffuse = std::make_shared<DiffuseMaterial>(redTexture);
-	std::shared_ptr<Material> greenDiffuse = std::make_shared<DiffuseMaterial>(greenTexture);
+	spConstTexture<spColorSampler> whiteTexture = makeConstTexture<spColorSampler>(white);
+	spConstTexture<spColorSampler> redTexture = makeConstTexture<spColorSampler>(red);
+	spConstTexture<spColorSampler> greenTexture = makeConstTexture<spColorSampler>(green);
+	spConstTexture<spColorSampler> blackTexture = makeConstTexture<spColorSampler>(black);
+	spColorSampler refraction = std::make_shared<AnalyticalSampler<CauchyEquation>>(BK7);
+	spConstTexture<spColorSampler> refractionTexture = makeConstTexture<spColorSampler>(refraction);
+	spMaterial whiteDiffuse = makeDiffuseMat(whiteTexture);
+	spMaterial redDiffuse = makeDiffuseMat(redTexture);
+	spMaterial greenDiffuse = makeDiffuseMat(greenTexture);
+	spMaterial glassMaterial = std::make_shared<IdealGlassMaterial>(blackTexture, whiteTexture, refractionTexture);
 	//std::shared_ptr<Material> specularMirror = std::make_shared<SpecularMirrorMaterial>(greyTexture);
 	std::shared_ptr<SceneObject> floor = std::make_shared<SceneObject>(
 		rect,
 		whiteDiffuse,
-		Affine(Rigid(vec3(275.0f, 0.0f, 279.6f),
+		Affine(Transform(vec3(275.0f, 0.0f, 279.6f),
 			quat(),
 			vec3(550.0f, 1.0f, 559.2f)))
 		);
 	std::shared_ptr<SceneObject> ceiling = std::make_shared<SceneObject>(
 		rect,
 		whiteDiffuse,
-		Affine(Rigid(vec3(275.0f, 550.0f, 279.6f),
+		Affine(Transform(vec3(275.0f, 550.0f, 279.6f),
 			quat(),
 			vec3(550.0f, -1.0f, 559.2f)))
 	);
 	std::shared_ptr<SceneObject> backWall = std::make_shared<SceneObject>(
 		rect,
 		whiteDiffuse,
-		Affine(Rigid(vec3(275.0f, 275.0f, 559.2f),
+		Affine(Transform(vec3(275.0f, 275.0f, 559.2f),
 			glm::angleAxis(glm::radians(90.0f), vec3(1.0f, 0.0f, 0.0f)),
 			vec3(550.0f, -1.0f, 550.0f)))
 	);
 	std::shared_ptr<SceneObject> leftWall = std::make_shared<SceneObject>(
 		rect,
-		redDiffuse,
-		Affine(Rigid(vec3(550.0f, 275.0f, 279.6),
+		greenDiffuse,
+		Affine(Transform(vec3(550.0f, 275.0f, 279.6),
 			glm::angleAxis(-glm::radians(90.0f), vec3(0.0f, 0.0f, 1.0f)),
 			vec3(550.0f, -1.0f, 559.2f)))
 	);
 	std::shared_ptr<SceneObject> rightWall = std::make_shared<SceneObject>(
 		rect,
-		greenDiffuse,
-		Affine(Rigid(vec3(0.0f, 275.0f, 279.6),
+		redDiffuse,
+		Affine(Transform(vec3(0.0f, 275.0f, 279.6),
 			glm::angleAxis(glm::radians(90.0f), vec3(0.0f, 0.0f, 1.0f)),
 			vec3(550.0f, -1.0f, 559.2f)))
 	);
 	std::shared_ptr<SceneObject> shortBox = std::make_shared<SceneObject>(
 		box,
 		whiteDiffuse,
-		Affine(Rigid(vec3(185.0f, 82.5f, 169.0f),
+		Affine(Transform(vec3(185.0f, 82.5f, 169.0f),
 			glm::angleAxis(-glm::radians(17.0f), vec3(0.0f, 1.0f, 0.0f)),
 			vec3(165.0f, 165.0f, 165.0f)))
 		);
 	std::shared_ptr<SceneObject> tallBox = std::make_shared<SceneObject>(
 		box,
-		whiteDiffuse,
-		Affine(Rigid(vec3(368.5f, 165.0f, 351.25f),
+		glassMaterial,
+		Affine(Transform(vec3(368.5f, 165.0f, 351.25f),
 			glm::angleAxis(glm::radians(17.0f), vec3(0.0f, 1.0f, 0.0f)),
 			vec3(165.0f, 330.0f, 165.0f)))
 	);
-	std::shared_ptr<Light> rectLight = std::make_shared<DiffuseAreaLight>(
-		Affine(Rigid(vec3(278.0f, 548.8f - 0.0001f, 279.6f),
+	std::shared_ptr<Box> lightBox = std::make_shared<Box>(vec3(0.0f), vec3(130.0f, 0.01f, 105.0f));
+	std::shared_ptr<Rect> lightRect = std::make_shared<Rect>(vec2(130.0f, 105.0f));
+
+	/*std::shared_ptr<Light> rectLight = std::make_shared<DiffuseAreaLight>(
+		Affine(Transform(vec3(278.0f, 548.8f - 0.1f, 279.6f),
 			quat(),
-			vec3(130.0f, -1.0f, 105.0f))),
+			vec3(1.0f, 1.0f, 1.0f))),
+		lightColor,
+		lightBox
+	);*/
+	//back
+	std::shared_ptr<Light> rectLight = std::make_shared<DiffuseAreaLight>(
+		Affine(Transform(vec3(278.0f, 548.8f - 0.1f, 279.6f),
+			glm::angleAxis(glm::radians(180.0f), vec3(1.0f, 0.0f, 0.0f)),
+			vec3(1.0f, 1.0f, 1.0f))),
+		lightColor,
+		lightRect
+		);
+
+	/*std::shared_ptr<Light> rectLight = std::make_shared<RectDirectionalLight>(
+		Affine(Transform(vec3(278.0f, 548.8f - 0.1f, 279.6f),
+			glm::angleAxis(glm::radians(180.0f), vec3(1.0f, 0.0f, 0.0f)),
+			vec3(1.0f, 1.0f, 1.0f))),
+		lightColor,
+		vec2(130.0f, 105.0f)
+		);*/
+	/*
+	//front
+	std::shared_ptr<Light> rectLight2 = std::make_shared<DiffuseAreaLight>(
+		Affine(Transform(vec3(278.0f, 548.8f - 5.01f, 279.6f - 52.5f),
+			glm::angleAxis(glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)),
+			vec3(130.0f, 10.0f, 10.0f))),
 		lightColor,
 		rect
-	);
+		);*/
+	/*//left
+	std::shared_ptr<Light> rectLight3 = std::make_shared<DiffuseAreaLight>(
+		Affine(Rigid(vec3(278.0f, 548.8f - 5.01f, 279.6f),
+			quat(),
+			vec3(130.0f, 10.01f, 105.0f))),
+		lightColor,
+		rect
+		);
+	//right
+	std::shared_ptr<Light> rectLight4 = std::make_shared<DiffuseAreaLight>(
+		Affine(Rigid(vec3(278.0f, 548.8f - 5.01f, 279.6f),
+			quat(),
+			vec3(130.0f, 10.01f, 105.0f))),
+		lightColor,
+		rect
+		);*/
 	scene->addObject(floor);
 	scene->addObject(ceiling);
 	scene->addObject(backWall);
@@ -209,6 +284,10 @@ std::shared_ptr<Scene> createCornwellBox() {
 	scene->addObject(shortBox);
 	scene->addObject(tallBox);
 	scene->addLight(rectLight);
+	/*scene->addLight(rectLight1);
+	scene->addLight(rectLight2);*/
+	/*scene->addLight(rectLight3);
+	scene->addLight(rectLight4);*/
 	return scene;
 }
 
@@ -223,11 +302,11 @@ void saveImagePPM(const char* filename, const Image<rgb>& image) {
 	for (int j = 0; j < image.height(); j++) {
 		for (int i = 0; i < image.width(); i++) {
 			// flip y direction
-			vec3 color = image(i, image.height() - j - 1);
-			//vec3 color = glm::pow(image(i, image.height() - j - 1), vec3(1.0f / 2.2f));
-			int r = glm::clamp<int>(int(255.0f * color.r), 0, 255);
-			int g = glm::clamp<int>(int(255.0f * color.g), 0, 255);
-			int b = glm::clamp<int>(int(255.0f * color.b), 0, 255);
+			vec3 color = image(i, image.height() - j - 1) * 2.0f;
+			color = glm::pow(color, vec3(1.0f / 2.2f));
+			int r = glm::clamp<int>(int(255.0f * color.r + 0.5f), 0, 255);
+			int g = glm::clamp<int>(int(255.0f * color.g + 0.5f), 0, 255);
+			int b = glm::clamp<int>(int(255.0f * color.b + 0.5f), 0, 255);
 			file << r << " " << g << " " << b << "\n";
 		}
 	}
@@ -249,23 +328,24 @@ std::string formatFilename() {
 			timeinfo.tm_mon,
 			1900 + timeinfo.tm_year);
 	}
-	return std::string(name);
+	return "./Out/" + std::string(name);
 }
 
 
 void testPointLocators()
 {
 	struct Point { vec3 position; vec3 coords() const { return position; } };
-	const int NumberOfPoints = 150;
+	const int NumberOfPoints = 500;
 	std::vector<Point> points;
 	points.reserve(NumberOfPoints);
-	int count = 200;
+	int count = 100;
 	for (int i = 0; i < NumberOfPoints; ++i)
 	{
 		vec3 point = vec3(Random::random(count), Random::random(count), Random::random(count));
 		point /= count;
 		points.push_back(Point{ vec3(Random::random(), Random::random(), Random::random()) });
 	}
+	/*
 	points.push_back(Point{vec3(4.2f, 1.2f, 0.0f) / 5.0f});
 	points.push_back(Point{ vec3(3.2f, 2.3f, 0.0f) / 5.0f });
 	points.push_back(Point{ vec3(4.61f, 2.3f, 0.0f) / 5.0f });
@@ -273,14 +353,16 @@ void testPointLocators()
 	points.push_back(Point{ vec3(2.4f, 3.15f, 0.0f) / 5.0f });
 	points.push_back(Point{ vec3(4.2f, 4.3f, 0.0f) / 5.0f });
 	points.push_back(Point{ vec3(297.0f / 1000.0f, 405.0f / 1000.0f, 0.0f) / 5.0f });
+	*/
 	KdTree<Point> kdTree(points.begin(), points.end(), 8);
 	BruteForceLocator<Point> bruteForce(points.begin(), points.end());
 	HashGrid<Point> grid(points.begin(), points.end(), 8);
-	const int NumberOfComparisons = 545;
+	AABBTree<Point> aabbTree(points.begin(), points.end(), 8);
+	const int NumberOfComparisons = 1545;
 	for (int j = 0; j < NumberOfComparisons; ++j)
 	{
 		vec3 center = vec3(Random::random(count), Random::random(count), 0.0f) / count;
-		float radius = glm::mix(0.1, 0.4, Random::random());
+		float radius = glm::mix(0.1f, 0.5f, Random::random());
 		float sqrRadius = radius * radius;
 		std::vector<Point> trueResult;
 		for (int i = 0; i < NumberOfPoints; ++i)
@@ -293,6 +375,7 @@ void testPointLocators()
 		std::vector<Point> kdTreeResult = kdTree.pointsWithinRadius(center, radius);
 		std::vector<Point> bruteForceResult = bruteForce.pointsWithinRadius(center, radius);
 		std::vector<Point> gridResult = grid.pointsWithinRadius(center, radius);
+		std::vector<Point> aabbResult = aabbTree.pointsWithinRadius(center, radius);
 		bool kdPasses = true;
 		//printf("center (%f, %f, %f), radius %f\n", center.x, center.y, center.z, radius);
 		for (auto trueResultPoint : trueResult)
@@ -307,7 +390,7 @@ void testPointLocators()
 				}
 			}
 			if (!found) {
-				printf("distance %f, %f", glm::distance2(trueResultPoint.coords(), center), radius * radius);
+				printf("distance %f, %f\n", glm::distance2(trueResultPoint.coords(), center), radius * radius);
 				printf("Kd tree FAILED\n");
 				break;
 			}
@@ -321,7 +404,7 @@ void testPointLocators()
 				}
 			}
 			if (!found) {
-				printf("distance %f, %f", glm::distance2(trueResultPoint.coords(), center), radius * radius);
+				printf("distance %f, %f\n", glm::distance2(trueResultPoint.coords(), center), radius * radius);
 				printf("Brute force FAILED\n");
 				break;
 			}
@@ -335,25 +418,56 @@ void testPointLocators()
 				}
 			}
 			if (!found) {
-				printf("distance %f, %f", glm::distance2(trueResultPoint.coords(), center), radius * radius);
+				printf("distance %f, %f\n", glm::distance2(trueResultPoint.coords(), center), radius * radius);
 				printf("Grid FAILED\n");
+				break;
+			}
+			found = false;
+			for (auto aabbPoint : aabbResult)
+			{
+				if (glm::distance2(trueResultPoint.coords(), aabbPoint.coords()) < 0.001f)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				printf("distance %f, %f\n", glm::distance2(trueResultPoint.coords(), center), radius * radius);
+				printf("AABB FAILED\n");
 				break;
 			}
 		}
 	}
+	printf("Done\n");
 }
 
 
 void testPointLocatorsPerformance(int pointCount) {
 
 	Timer<double> timer;
-	struct Point { vec3 position; inline const vec3& coords() const { return position; } };
+	struct Point { vec3 position; double payload[8]; inline const vec3& coords() const { return position; } };
 	std::vector<Point> points;
 	for (int i = 0; i < pointCount; i++)
 		points.push_back(Point{ vec3(Random::random(), Random::random(), Random::random()) });
 	timer.restart();
-	KdTree<Point> kdTree(points.begin(), points.end(), 1, 12);
+	for (int i = 0; i < 20; ++i) {
+		KdTree<Point> kdTree(points.begin(), points.end(), 10, 12);
+	}
 	double kdTime = timer.elapsedAndRestart();
+	for (int i = 0; i < 20; ++i) {
+		BruteForceLocator<Point> bfpointLocator(points.begin(), points.end());
+	}
+	double bfTime = timer.elapsedAndRestart();
+	for (int i = 0; i < 20; ++i) {
+		HashGrid<Point> bfpointLocator(points.begin(), points.end(), 20);
+	}
+	double gridTime = timer.elapsedAndRestart();
+	for (int i = 0; i < 20; ++i) {
+		AABBTree<Point> aabb(points.begin(), points.end(), 1, 12);
+	}
+	double aabbTime = timer.elapsedAndRestart();
+
+	KdTree<Point> kdTree(points.begin(), points.end(), 1, 12);
 	double kdSearchTime = 0.0;
 	timer.restart();
 	for (int i = 0; i < 1000; ++i) {
@@ -363,47 +477,58 @@ void testPointLocatorsPerformance(int pointCount) {
 		kdTree.indicesWithinRadius(center, radius, indices);
 	}
 	kdSearchTime += timer.elapsedAndRestart();
-	/*timer.restart();
+	timer.restart();
 	BruteForceLocator<Point> bfpointLocator(points.begin(), points.end());
-	double bfTime = timer.elapsedAndRestart();
 	double bfSearchTime = 0.0;
-		timer.restart();
+	timer.restart();
 	for (int i = 0; i < 1000; ++i) {
 		vec3 center(Random::random(), Random::random(), Random::random());
 		double radius = Random::random() * 0.5 + 0.1;
-		std::vector<Point> points = bfpointLocator.pointsWithinRadius(center, radius);
+		std::vector<int> indices;
+		bfpointLocator.indicesWithinRadius(center, radius, indices);
 	}
 	bfSearchTime += timer.elapsedAndRestart();
 	timer.restart();
 	HashGrid<Point> grid(points.begin(), points.end(), 20);
-	double gridTime = timer.elapsedAndRestart();
 	double gridSearchTime = 0.0;
 	timer.restart();
 	for (int i = 0; i < 1000; ++i) {
 		vec3 center(Random::random(), Random::random(), Random::random());
 		double radius = Random::random() * 0.5 + 0.1;
-		std::vector<Point> points = grid.pointsWithinRadius(center, radius);
+		std::vector<int> indices;
+		grid.indicesWithinRadius(center, radius, indices);
 	}
-	gridSearchTime += timer.elapsedAndRestart();*/
+	gridSearchTime += timer.elapsedAndRestart();
+	timer.restart();
+	AABBTree<Point> aabb(points.begin(), points.end(), 1, 12);
+	double aabbSearchTime = 0.0;
+	timer.restart();
+	for (int i = 0; i < 1000; ++i) {
+		vec3 center(Random::random(), Random::random(), Random::random());
+		double radius = Random::random() * 0.5 + 0.1;
+		std::vector<int> indices;
+		aabb.indicesWithinRadius(center, radius, indices);
+	}
+	aabbSearchTime += timer.elapsedAndRestart();
 	printf("Point count: %d\n", pointCount);
 	printf("Kd tree creation %f\n", float(kdTime));
-	/*printf("Brute force creation %f\n", float(bfTime));
-	printf("Hash grid creation %f\n\n", float(gridTime));*/
+	printf("Brute force creation %f\n", float(bfTime));
+	printf("Hash grid creation %f\n", float(gridTime));
+	printf("AABB tree creation %f\n\n", float(aabbTime));
 	printf("Kd tree search time %f\n", float(kdSearchTime));
-	/*printf("Brute force search time %f\n", float(bfSearchTime));
-	printf("Hash grid search time %f\n", float(gridSearchTime));*/
+	printf("Brute force search time %f\n", float(bfSearchTime));
+	printf("Hash grid search time %f\n", float(gridSearchTime));
+	printf("AABB tree search time %f\n", float(aabbSearchTime));
 }
 
-
 int main() {
+	/*testPointLocatorsPerformance(1000);
 	testPointLocatorsPerformance(10000);
-	testPointLocatorsPerformance(50000);
 	testPointLocatorsPerformance(100000);
-	testPointLocatorsPerformance(500000);
 	testPointLocatorsPerformance(1000000);
 	//testPointLocators();
 	getchar();
-	return 0;
+	return 0;*/
 	// create scene
 	std::shared_ptr<Scene> scene = createCornwellBox();
 	photon_mapping::Tracer tracer;
@@ -412,26 +537,32 @@ int main() {
 	photon_mapping::Settings settings;
 	settings.threads = 8;
 	settings.tileSize = 16;
-	settings.photonsPerIteration = 100000;
-	settings.iterations = 120;
-	settings.initialRadius = 10.0f;
+	settings.photonsPerIteration = 10000;
+	settings.iterations = 300;
+	settings.maxDepth = 8;
+	settings.initialRadius = 25.0f;
 	tracer.setSettings(settings);
-	const int width = 256;
-	const int height = 256;
+	const int width = 128;
+	const int height = 128;
 	std::unique_ptr<Progress> progress = std::make_unique<ConsoleProgress>();
 	//focal length 0.035
 	//width: 0.025, height: 0.025
-	std::shared_ptr<Camera> camera = std::make_unique<Pinhole>(glm::radians(18.0f), 1.0f, 0.0f,
+	std::shared_ptr<Camera> camera = std::make_unique<Pinhole>(glm::radians(39.3076f)/2.0f, 1.0f, 0.0f,
 		Affine::lookAt(vec3(278.0f, 273.0f, -800.0f), vec3(278.0f, 273.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f)).inverse(),
 		height / float(width)
 		);
+	// Focal length  0.035
+	// Width, height 0.025x0.025
+	//2.0*atan(sensor_width / (2.0*focal_length))
 	tracer.setCamera(camera);
 	// render image
-
+	Timer<float> timer;
 #ifdef RENDER_FORWARD
 	Image<rgb> image = tracer.renderForward(width, height);
+	printf("\nTime for forward SPPM tracing: %f/n", timer.elapsed());
 #else
 	Image<rgb> image = tracer.renderBackward(width, height, progress);
+	printf("\nTime for backward SPPM tracing: %f\n", timer.elapsed());
 #endif
 	std::string filename = formatFilename() + ".ppm";
 	// save image to file
