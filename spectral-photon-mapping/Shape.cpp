@@ -24,9 +24,3 @@ float Shape::pdf(const vec3& pos, const vec3& wi, const Affine& transform, const
 		(area() * glm::abs(glm::dot(tHit.normal, -glm::normalize(localRay.rd))));
 	return pdf;
 }
-
-
-
-
-
-

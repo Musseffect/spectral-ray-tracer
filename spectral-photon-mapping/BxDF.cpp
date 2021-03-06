@@ -83,12 +83,12 @@ float IdealGlass::sampleF(const vec3& wo, vec3& wi, const vec3& normal, float& p
 	else {
 		sampledType = Specular | Transmission;
 		float index = refractionIndex->sample(wavelength);
-		float eta = index;
+		float eta = 1.0f / index;
 		vec3 n = normal;
 		float cosTheta = glm::dot(wo, normal);
 		if (cosTheta < 0.0f) {
 			n *= -1.0f;
-			eta = 1.0f / index;
+			eta = index;
 		}
 		if (eta * eta * (1.0f - cosTheta * cosTheta) >= 1.0) {
 			sampledType = Specular | Reflection;

@@ -70,7 +70,7 @@ namespace photon_mapping {
 				float scatteringPdf;
 				int sampledType;
 				float f = bsdf->sampleF(wo, wi, hitInfo.normal, scatteringPdf, BxDF::All, sampledType, wavelength);
-				f *= glm::max(glm::dot(wi, hitInfo.normal), 0.0f);
+				f *= glm::abs(glm::dot(wi, hitInfo.normal));
 				if (f > 0.0f && scatteringPdf > 0.0f) {
 					float weight = 1.0f;
 					if ((sampledType & BxDF::Specular) == 0) {
@@ -216,7 +216,7 @@ namespace photon_mapping {
 					if (f == 0.0f || pdf == 0.0f)
 						break;
 					specularBounce = (type & BxDF::Specular);
-					luminocity *= f * glm::max(0.0f, glm::dot(wi, hitInfo.normal)) / pdf;
+					luminocity *= f * glm::abs(glm::dot(wi, hitInfo.normal)) / pdf;
 					if (luminocity == 0.0f)
 						break;
 					ray = Ray(hitInfo.globalPosition, wi);

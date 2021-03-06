@@ -137,9 +137,6 @@
     <ClInclude Include="Sampling.h">
       <Filter>Исходные файлы\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Image.h">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClInclude>
     <ClInclude Include="Material.h">
       <Filter>Исходные файлы\Common</Filter>
     </ClInclude>
@@ -220,6 +217,9 @@
     </ClInclude>
     <ClInclude Include="Light.h">
       <Filter>Исходные файлы\Common\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Image.h">
+      <Filter>Исходные файлы\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
