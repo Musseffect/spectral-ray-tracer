@@ -13,5 +13,132 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Исходные файлы\Photon Mapping">
+      <UniqueIdentifier>{ae29a54d-a2ff-45bd-921e-2a6d97e4662f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Photon Mapping\Shape">
+      <UniqueIdentifier>{a8d68dce-c893-4c8c-bea3-73922acc734e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Photon Mapping\Light">
+      <UniqueIdentifier>{7a26cc25-8f9f-444e-95ed-055a398667b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Photon Mapping\Camera">
+      <UniqueIdentifier>{f147ccf0-a116-402b-af6f-545ad3e10111}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Utils">
+      <UniqueIdentifier>{71e282a7-c5ca-4abd-9209-7055e4820b77}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Random.cpp">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="Transform.cpp">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="BBox3D.cpp">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="Color.cpp">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="BxDF.cpp">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="Sampling.cpp">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="Shape.cpp">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="HitInfo.cpp">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClCompile>
+    <ClCompile Include="Timer.cpp">
+      <Filter>Исходные файлы\Utils</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="KDTree.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Color.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneObject.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="BBox3D.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Random.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Ray.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Sampling.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Tracer.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Image.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Distribution.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyframesSequence.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="CSG.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Shape.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="BxDF.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="HitInfo.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Progress.h">
+      <Filter>Исходные файлы\Photon Mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Исходные файлы\Utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="todo.txt" />
   </ItemGroup>
 </Project>

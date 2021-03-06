@@ -1,0 +1,18 @@
+
+
+Debug:
+Pinhole -> works
+ndc -> works
+save to ppm -> works
+lookAt -> works
+box normals -> works
+cornell box scene transforms -> works
+
+
+todo:
+Forward PT
+Backward PT
+Bidirectional PT
+Metropolis sampling
+Volumetric stuff
+Vertex connection (merge?)
