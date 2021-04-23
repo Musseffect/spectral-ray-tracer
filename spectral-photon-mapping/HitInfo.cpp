@@ -1,5 +1,4 @@
 #include "HitInfo.h"
-#include "SceneObject.h"
 #include "Light.h"
 
 

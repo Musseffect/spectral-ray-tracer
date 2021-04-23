@@ -8,52 +8,37 @@
 
 using rgb = glm::vec3;
 
+namespace Spectral {
+	using Color = float;
+}
+namespace RGB {
+	using Color = rgb;
+}
+
+
 class ColorSampler;
 
 vec3 XYZToRGB(vec3 xyz);
 
-
-class CauchyEquation {
-	std::vector<float> coeffs;
-public:
-	CauchyEquation(const std::vector<float>& coeffs) :coeffs(coeffs)
-	{
+// integral of multiplication of piecewise linear curves based on regularly sampled values from two distributions
+float multiply(const ColorSampler* const a, const ColorSampler* const b, float min, float max, int samples = 60) {
+	assert(samples != 1);
+	float value = 0.0;
+	float aCur = a->sample(min);
+	float bCur = b->sample(min);
+	float dx = (max - min) / float(samples);
+	for (int i = 1; i < samples; ++i) {
+		float x = (max - min) * i / float(samples) + min;
+		float aNext = a->sample(x);
+		float bNext = b->sample(x);
+		float da = aNext - aCur;
+		float db = bNext - bCur;
+		value += aCur * bCur + (aCur * db + bCur * da) * 0.5f + da * db / 3.0f;
+		aCur = aNext;
+		bCur = bNext;
 	}
-	float operator()(float wavelength) const {
-		assert(coeffs.size() > 0.0);
-		float result = coeffs.front();
-		wavelength *= wavelength;
-		for (int i = 1; i < coeffs.size(); ++i) {
-			result += coeffs[i] / wavelength;
-		}
-		return result;
-	}
-};
-
-class SellmeierEquation {
-	std::vector<std::array<float, 2>> coeffs;
-public:
-	SellmeierEquation(const std::vector<std::array<float, 2>>& coeffs)
-		:coeffs(coeffs)
-	{
-	}
-	float operator()(float wavelength) const {
-		float result = 1.0f;
-		wavelength *= wavelength;
-		for (auto coeff: coeffs) {
-			result += coeff[0] * wavelength / (wavelength - coeff[1]);
-		}
-		return std::sqrt(result);
-	}
-};
-
-// from wikipedia
-static CauchyEquation fucedSilica({1.458f, 0.00354f});
-static CauchyEquation BK7({ 1.5046f, 0.0042f });
-static CauchyEquation K5({ 1.522f, 0.00459f });
-static CauchyEquation BaK4({ 1.569f, 0.00531f });
-static CauchyEquation BaF10({ 1.67f, 0.00743f });
-static CauchyEquation SF10({ 1.728f, 0.01342f });
+	return value * dx;
+}
 
 template<class T>
 T xFit_1931(T wave) {
@@ -87,10 +72,18 @@ vec3 spectrumToRGB(const ColorSampler* const sampler, float min, float max, int 
 static const float D65 = 6504;
 
 class BlackBodySPD {
+protected:
 	float temperature = 2856; // standart illuminant A
 public:
 	float sample(float wavelength) const;
 	BlackBodySPD(float temperature) : temperature(temperature) {};
+};
+
+class BlackBodySPDNormalized: protected BlackBodySPD {
+	float temperature = 2856; // standart illuminant A
+public:
+	float sample(float wavelength) const;
+	BlackBodySPDNormalized(float temperature) : BlackBodySPD(temperature) {};
 };
 
 class ColorSampler {
@@ -123,7 +116,7 @@ public:
 };
 
 class BlackBodyColorSampler : public ColorSampler {
-	BlackBodySPD spd;
+	BlackBodySPDNormalized spd;
 	float intensity;
 public:
 	BlackBodyColorSampler(float temperature, float intensity) :spd(temperature), intensity(intensity){

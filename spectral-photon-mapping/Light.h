@@ -1,8 +1,10 @@
 #pragma once
+#include "Intersectable.h"
 #include "Transform.h"
 #include "Ray.h"
 #include "Color.h"
 #include "Disk.h"
+#include "Config.h"
 #include "Rect.h"
 #include <memory>
 
@@ -11,7 +13,7 @@ class Light;
 using spLight = std::shared_ptr<Light>;
 
 
-class Light{
+class Light: public Intersectable{
 protected:
 	Affine lightToWorld;
 public:
@@ -20,12 +22,13 @@ public:
 		:lightToWorld(lightToWorld) {}
 	virtual float sampleLe(Ray& ray, vec3& lightNormal, float& pdfPos, float& pdfDir, float wavelength) const = 0;
 	virtual float sampleLi(const HitInfo& hitInfo, float wavelength, vec3& worldPosition, float& pdf) const = 0;
-	virtual BBox3D bbox() const = 0;
 	virtual float power(float wavelength) const = 0;
 	virtual float power() const = 0;
+	// aka "is intersectable"
+	virtual bool hasZeroArea() const = 0;
 	virtual bool intersect(const Ray& ray) const = 0;
 	virtual bool isDelta() const = 0;
-	virtual bool intersect(const Ray& ray, HitInfo& hitInfo) const = 0;
+	virtual bool intersect(Ray& ray, HitInfo& hitInfo) const = 0;
 	// for infinite area lights
 	virtual float lightEmitted(const Ray& ray, float wavelength) const {
 		return 0.0f;
@@ -34,7 +37,7 @@ public:
 	virtual float lightEmitted(const vec3& wo, const vec3& normal, float wavelength) const {
 		return 0.0f;
 	}
-	virtual float pdfLi(const HitInfo& hi, const vec3& wi, const Scene* scene) const = 0;
+	virtual float pdfLi(const HitInfo& hi, const vec3& wi) const = 0;
 };
 
 // DONE
@@ -58,7 +61,7 @@ public:
 		return 4.0f * glm::pi<float>() * totalPower;
 	}
 	virtual float sampleLe(Ray& ray, vec3& lightNormal, float& pdfPos, float& pdfDir, float wavelength) const override {
-		vec3 dir = Sampling::sampleSphere();
+		vec3 dir = Sampling::uniformSphere();
 		ray.ro = worldCenter;
 		ray.rd = dir;
 		lightNormal = dir;
@@ -75,11 +78,14 @@ public:
 	virtual bool intersect(const Ray& ray) const override {
 		return false;
 	}
-	virtual bool intersect(const Ray& ray, HitInfo& hitInfo) const override {
+	virtual bool intersect(Ray& ray, HitInfo& hitInfo) const override {
 		return false;
 	}
-	virtual float pdfLi(const HitInfo& hi, const vec3& wi, const Scene* scene) const override {
+	virtual float pdfLi(const HitInfo& hi, const vec3& wi) const override {
 		return 0.0f;
+	}
+	virtual bool hasZeroArea() const override {
+		return true;
 	}
 };
 
@@ -136,7 +142,7 @@ public:
 			return false;
 		return true;
 	}
-	virtual bool intersect(const Ray& ray, HitInfo& hitInfo) const override {
+	virtual bool intersect(Ray& ray, HitInfo& hitInfo) const override {
 		const Ray rayLocal = lightToWorld.transformInverse(ray);
 		float t = -rayLocal.ro.y / rayLocal.rd.y;
 		if (t < ray.tMin || t > ray.tMax)
@@ -148,13 +154,18 @@ public:
 		hitInfo.localPosition = vec3(p.x, 0.0, p.y);
 		hitInfo.normal = lightToWorld.transformNormal(vec3(0.f, 1.0f, 0.f));
 		hitInfo.globalPosition = lightToWorld.transformPoint(hitInfo.localPosition);
+		hitInfo.primitive = nullptr;
+		hitInfo.light = this;
+		ray.tMax = hitInfo.t;
 		return true;
 	}
-	virtual float pdfLi(const HitInfo& hi, const vec3& wi, const Scene* scene) const override {
+	virtual float pdfLi(const HitInfo& hi, const vec3& wi) const override {
 		return 0.0f;
 	}
+	virtual bool hasZeroArea() const override {
+		return surfaceArea() == 0.0f;
+	}
 };
-
 
 class RectDirectionalLight : public DirectionalLight {
 	vec2 size;
@@ -184,7 +195,7 @@ class DiscDirectionalLight : public DirectionalLight {
 	float radius;
 protected:
 	virtual vec2 samplePosition() const override {
-		return Sampling::sampleDisk(radius);
+		return Sampling::uniformDisk(radius);
 	}
 	virtual bool isInBounds(vec2 localPosition) const override {
 		return glm::dot(localPosition, localPosition) < radius * radius;
@@ -219,7 +230,10 @@ public:
 		, intensity(intensity)
 		, area(shape->area())
 	{
-		totalPower = intensity->integral(400.0f, 700.0f, 60);
+		totalPower = intensity->integral(Config::get().spectrumMin(), Config::get().spectrumMax(), 60);
+	}
+	virtual bool hasZeroArea() const override {
+		return area == 0.0f;
 	}
 	virtual bool isDelta() const override {
 		return false;
@@ -234,7 +248,7 @@ public:
 		HitInfo hitInfo = shape->sample();
 		lightNormal = lightToWorld.transformNormal(hitInfo.normal);
 		ray.ro = lightToWorld.transformPoint(hitInfo.localPosition);
-		ray.rd = Sampling::sampleHemisphere(lightNormal);
+		ray.rd = Sampling::uniformHemisphere(lightNormal);
 		pdfPos = shape->pdf();
 		pdfDir = Sampling::uniformHemispherePdf();
 		return intensity->sample(wavelength);
@@ -243,31 +257,38 @@ public:
 		const Ray rayLocal = lightToWorld.transformInverse(ray);
 		return shape->intersect(rayLocal);
 	}
-	virtual bool intersect(const Ray& ray, HitInfo& hitInfo) const override {
+	virtual bool intersect(Ray& ray, HitInfo& hitInfo) const override {
 		const Ray rayLocal = lightToWorld.transformInverse(ray);
 		bool result = shape->intersect(rayLocal, hitInfo);
 		if (!result)
 			return false;
 		hitInfo.globalPosition = lightToWorld.transformPoint(hitInfo.localPosition); //local to world
 		hitInfo.normal = lightToWorld.transformNormal(hitInfo.normal);
+		hitInfo.primitive = nullptr;
+		hitInfo.light = this;
+		ray.tMax = hitInfo.t;
 		return true;
 	}
 	virtual float lightEmitted(const vec3& wo, const vec3& normal, float wavelength) const {
 		return glm::dot(wo, normal) > 0.0f ? intensity->sample(wavelength): 0.0f;
 	}
 	virtual float sampleLi(const HitInfo& hitInfo, float wavelength, vec3& worldPosition, float& pdf) const override {
-		// sample in localCoords
-		HitInfo shapeSample = shape->sample(lightToWorld.transformInversePoint(hitInfo.globalPosition), lightToWorld, pdf);
-		worldPosition = lightToWorld.transformPoint(shapeSample.localPosition);
-		shapeSample.normal = lightToWorld.transformNormal(shapeSample.normal);
-		if (glm::dot(hitInfo.globalPosition - worldPosition, shapeSample.normal) < 0.0f)
+		HitInfo sample = shape->sample();
+		sample.globalPosition = lightToWorld.transformPoint(sample.localPosition);
+		sample.normal = lightToWorld.transformNormal(sample.normal);
+		if (glm::dot(hitInfo.globalPosition - worldPosition, sample.normal) < 0.0f)
 			return 0.0f;
+		vec3 wi = sample.globalPosition - hitInfo.globalPosition;
+		float distSqr = glm::dot(wi, wi);
+		wi /= glm::sqrt(distSqr);
+		// solid angle pdf
+		pdf = shape->pdf() * distSqr / glm::abs(glm::dot(sample.normal, -wi));
 		return intensity->sample(wavelength);
 	}
 	virtual BBox3D bbox() const override {
 		return lightToWorld.transform(shape->bbox());
 	}
-	virtual float pdfLi(const HitInfo& hit, const vec3& wi, const Scene* scene) const override {
-		return shape->pdf(hit.globalPosition, wi, lightToWorld, scene);
+	virtual float pdfLi(const HitInfo& hit, const vec3& wi) const override {
+		return shape->pdf(hit.globalPosition, wi, lightToWorld);
 	}
 };

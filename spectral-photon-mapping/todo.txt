@@ -1,21 +1,16 @@
-
-
-Debug:
-Pinhole -> works
-ndc -> works
-save to ppm -> works
-lookAt -> works
-box normals -> works
-cornell box scene transforms -> works
-
-AABB tree for points
-write backward SPPM
 test timings
 test prism scene(128x128, 1mil photons 120 iterations)
 
-
-
-cornell box 256x256 100000 300 iteration 215 sec
+forward:
+cornell box 256x256 100000 300 iteration BruteForce 215 sec
+cornell box 256x256 100000 300 iteration AABBTree
+cornell box 256x256 100000 300 iteration Grid
+cornell box 256x256 100000 300 iteration KdTree
+backward:
+cornell box 256x256 100000 300 iteration BruteForce
+cornell box 256x256 100000 300 iteration AABBTree
+cornell box 256x256 100000 300 iteration Grid
+cornell box 256x256 100000 300 iteration KdTree
 
 todo:
 Forward PT

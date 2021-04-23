@@ -14,7 +14,5 @@ public:
 	virtual float area() const override;
 	virtual float pdf() const override;
 	virtual HitInfo sample() const override;
-	// sample in local coordinates
-	virtual HitInfo sample(const vec3& localPos, const Affine& transform, float& pdf) const override;
-	virtual float pdf(const vec3& pos, const vec3& wi, const Affine& transform, const Scene* scene) const override;
+	virtual float pdf(const vec3& pos, const vec3& wi, const Affine& transform) const override;
 };

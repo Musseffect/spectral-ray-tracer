@@ -1,5 +1,14 @@
 #include "Color.h"
 
+float blackBodyRadiance(float wavelength, float temperature) {
+	const float c = 299792458.0f;
+	const float h = 6.62606957e-34;
+	const float kb = 1.3806488e-23;
+	float l = wavelength * 1e-9;
+	float l5 = l * l * l * l * l;
+	return (2.0f * h * c * c) / (l5 * (std::exp(h * c / (l * kb * temperature)) - 1.0f));
+}
+
 vec3 XYZToRGB(vec3 xyz) {
 	/*const mat3 XYZ_to_RGB(2.3706743f, -0.9000405f, -0.4706338f,
 		-0.5138850f, 1.4253036f, 0.0885814f,
@@ -16,25 +25,26 @@ vec3 wavelengthToRGB(float wavelength, float intensity) {
 }
 
 vec3 spectrumToRGB(const ColorSampler* const sampler, float min, float max, int samples) {
+	assert(samples > 1);
 	vec3 xyz(0.0f);
 	for (int i = 0; i < samples; ++i) {
 		float wavelength = glm::mix(min, max, i / float(samples - 1));
 		xyz += vec3(xFit_1931(wavelength), yFit_1931(wavelength), zFit_1931(wavelength)) * sampler->sample(wavelength);
 	}
-	xyz *= (max - min) / float(samples - 1);
+	xyz *= (max - min) / float(samples);
 	return glm::max(XYZToRGB(xyz), 0.0f);
 }
 
 float BlackBodySPD::sample(float wavelength) const {
-	const float c = 299792458.0f;
-	const float h = 6.62606957e-34;
-	const float kb = 1.3806488e-23;
-	float l = wavelength * 1e-9;
-	float l5 = l * l * l * l * l;
-	return (2.0f * h * c * c) / (l5 * (std::exp(h * c / (l * kb * temperature)) - 1.0f));
+	return blackBodyRadiance(wavelength, temperature);
+}
+
+float BlackBodySPDNormalized::sample(float wavelength) const {
+	return BlackBodySPD::sample(wavelength) / BlackBodySPD::sample(2.8977721e6 / temperature);
 }
 
 float ColorSampler::integral(float min, float max, int samples) const  {
+	assert(samples > 1);
 	float result = 0.0;
 	for (int i = 0; i < samples; i++)
 		result += sample(glm::lerp(min, max, i / float(samples - 1)));
@@ -44,7 +54,7 @@ float ColorSampler::integral(float min, float max, int samples) const  {
 	// min      max
 	// w = max - min
 	// width of one bin = w / (bins - 1)
-	return result * (max - min) / float(samples - 1);
+	return result * (max - min) / float(samples);
 }
 
 float BlackBodyColorSampler::sample(float wavelength) const {

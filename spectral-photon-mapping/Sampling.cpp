@@ -2,12 +2,12 @@
 #include "Transform.h"
 
 
-float Sampling::sampleStratified(int count) {
+float Sampling::uniformStratified(int count) {
 	int bin = Random::random(count - 1);
 	return (float(bin) + Random::random()) / float(count);
 }
 
-vec3 Sampling::sampleHemisphere(vec3 dir) {
+vec3 Sampling::uniformHemisphere(vec3 dir) {
 	dir = normalize(dir);
 	vec3 o1 = normalize(ortho(dir));
 	vec3 o2 = normalize(cross(dir, o1));
@@ -21,13 +21,13 @@ float Sampling::uniformHemispherePdf() {
 	return glm::one_over_two_pi<float>();
 }
 
-vec2 Sampling::sampleDisk(float radius) {
+vec2 Sampling::uniformDisk(float radius) {
 	float r = sqrt(Random::random()*radius);
 	float angle = Random::random()*glm::two_pi<float>();
 	return vec2(r*cos(angle), r*sin(angle));
 }
 
-vec3 Sampling::sampleSphere() {
+vec3 Sampling::uniformSphere() {
 	vec2 r = vec2(Random::random(), Random::random());
 	r.x = r.x * glm::two_pi<float>();
 	r.y = 2.0f * r.y - 1.0f;
@@ -39,7 +39,7 @@ float Sampling::uniformSpherePdf() {
 	return glm::one_over_two_pi<float>() / 2.0f;
 }
 
-vec3 Sampling::sampleCosWeighted(vec3 dir) {
+vec3 Sampling::cosWeightedHemisphere(vec3 dir) {
 	dir = normalize(dir);
 	vec3 o1 = normalize(ortho(dir));
 	vec3 o2 = normalize(cross(dir, o1));
@@ -50,7 +50,7 @@ vec3 Sampling::sampleCosWeighted(vec3 dir) {
 	return cos(r.x) * p * o1 + sin(r.x) * p * o2 + r.y * dir;
 }
 
-vec3 Sampling::sampleCosWeighted(vec3 dir, float& pdf) {
+vec3 Sampling::cosWeightedHemisphere(vec3 dir, float& pdf) {
 	dir = normalize(dir);
 	vec3 o1 = normalize(ortho(dir));
 	vec3 o2 = normalize(cross(dir, o1));
@@ -62,7 +62,7 @@ vec3 Sampling::sampleCosWeighted(vec3 dir, float& pdf) {
 	return cos(r.x) * p * o1 + sin(r.x) * p * o2 + r.y * dir;
 }
 
-vec3 Sampling::randomTriangle(const vec3& a, const vec3& b, const vec3& c) {
+vec3 Sampling::uniformTriangle(const vec3& a, const vec3& b, const vec3& c) {
 	vec2 r = vec2(Random::random(), Random::random());
 	float s = 1.0f - glm::sqrt(1.0f - r.x);
 	float t = (1.0f - s) * r.y;
@@ -73,7 +73,7 @@ float Sampling::uniformTrianglePdf(const vec3& a, const vec3& b, const vec3& c) 
 	return glm::length(glm::cross(b - a, b - c));
 }
 
-vec3 Sampling::randomTriangle(const vec3& a, const vec3& b, const vec3& c, float& pdf) {
+vec3 Sampling::uniformTriangle(const vec3& a, const vec3& b, const vec3& c, float& pdf) {
 	vec2 r = vec2(Random::random(), Random::random());
 	float s = 1.0f - glm::sqrt(1.0f - r.x);
 	float t = (1.0f - s) * r.y;

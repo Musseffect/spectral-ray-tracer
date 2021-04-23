@@ -75,10 +75,7 @@ public:
 	virtual HitInfo sample() const override {
 		throw std::runtime_error("Cannot sample infinite shape");
 	}
-	virtual HitInfo sample(const vec3& localPos, const Affine& transform, float& pdf) const override {
-		throw std::runtime_error("Cannot sample infinite shape");
-	}
-	virtual float pdf(const vec3& pos, const vec3& wi, const Affine& transform, const Scene* scene) const override {
+	virtual float pdf(const vec3& pos, const vec3& wi, const Affine& transform) const override {
 		throw std::runtime_error("Cannot sample infinite shape");
 	}
 };

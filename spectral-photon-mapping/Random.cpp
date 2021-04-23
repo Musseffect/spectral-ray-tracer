@@ -17,12 +17,12 @@ float Random::random(float max)
 
 int Random::random(int min, int max)
 {
-	return min + (int)round((max - min) * random());
+	return min + random(max - min);
 }
 
 int Random::random(int max)
 {
-	return (int)round(max*random());
+	return std::min((int)floor((max + 1) * random()), max);
 }
 
 void Random::setSeed(int seed)

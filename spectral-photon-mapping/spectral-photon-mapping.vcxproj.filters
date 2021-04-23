@@ -16,20 +16,32 @@
     <Filter Include="Исходные файлы\Utils">
       <UniqueIdentifier>{71e282a7-c5ca-4abd-9209-7055e4820b77}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Исходные файлы\Common">
+    <Filter Include="Исходные файлы\Tests">
+      <UniqueIdentifier>{13a4e9ae-05ba-4268-ad3a-6b3b157b3b67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Core">
       <UniqueIdentifier>{ae29a54d-a2ff-45bd-921e-2a6d97e4662f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Исходные файлы\Common\Light">
-      <UniqueIdentifier>{7a26cc25-8f9f-444e-95ed-055a398667b2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Исходные файлы\Common\Camera">
+    <Filter Include="Исходные файлы\Core\Camera">
       <UniqueIdentifier>{f147ccf0-a116-402b-af6f-545ad3e10111}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Исходные файлы\Common\Tracers">
+    <Filter Include="Исходные файлы\Core\Shapes">
+      <UniqueIdentifier>{a8d68dce-c893-4c8c-bea3-73922acc734e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Core\Scene">
+      <UniqueIdentifier>{cdac9329-a92b-40c0-b36f-061980f5074c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Core\Scene\Light">
+      <UniqueIdentifier>{7a26cc25-8f9f-444e-95ed-055a398667b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Tracers">
       <UniqueIdentifier>{5cd4e17b-ed19-49c2-a99b-41e9eae39dec}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Исходные файлы\Common\Shapes">
-      <UniqueIdentifier>{a8d68dce-c893-4c8c-bea3-73922acc734e}</UniqueIdentifier>
+    <Filter Include="Исходные файлы\Core\PointLocators">
+      <UniqueIdentifier>{735b5dc2-facb-4560-a2d4-a9305a541cc2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Core\PrimitiveLocators">
+      <UniqueIdentifier>{c7576a76-101b-42fe-aa1e-89bc4672aefb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -37,189 +49,258 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="Random.cpp">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
     <ClCompile Include="Transform.cpp">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
     <ClCompile Include="BBox3D.cpp">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
     <ClCompile Include="Color.cpp">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Scene.cpp">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
     <ClCompile Include="BxDF.cpp">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
     <ClCompile Include="Sampling.cpp">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Shape.cpp">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
     <ClCompile Include="HitInfo.cpp">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
     <ClCompile Include="Timer.cpp">
       <Filter>Исходные файлы\Utils</Filter>
     </ClCompile>
     <ClCompile Include="Material.cpp">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
     <ClCompile Include="Box.cpp">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClCompile>
     <ClCompile Include="Rect.cpp">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClCompile>
     <ClCompile Include="Disk.cpp">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClCompile>
     <ClCompile Include="Sphere.cpp">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClCompile>
     <ClCompile Include="Mesh.cpp">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClCompile>
     <ClCompile Include="PlanarShape.cpp">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClCompile>
     <ClCompile Include="Triangle.cpp">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClCompile>
     <ClCompile Include="Cylinder.cpp">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClCompile>
     <ClCompile Include="Plane.cpp">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
-      <Filter>Исходные файлы\Common\Camera</Filter>
-    </ClCompile>
-    <ClCompile Include="Distribution1D.cpp">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Function1D.cpp">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Scenes.cpp">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="SPPM.cpp">
+      <Filter>Исходные файлы\Tracers</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>Исходные файлы\Core\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Primitive.cpp">
+      <Filter>Исходные файлы\Core\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>Исходные файлы\Core\Scene\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="BSDF.cpp">
+      <Filter>Исходные файлы\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Shape.cpp">
+      <Filter>Исходные файлы\Core\Shapes</Filter>
+    </ClCompile>
+    <ClCompile Include="Function1D.cpp">
+      <Filter>Исходные файлы\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Distribution1D.cpp">
+      <Filter>Исходные файлы\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Config.cpp">
+      <Filter>Исходные файлы\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Accelerators\Primitive Locators\Grid.cpp">
+      <Filter>Исходные файлы\Core\PrimitiveLocators</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="KDTree.h">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClInclude>
     <ClInclude Include="Color.h">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="SceneObject.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="BBox3D.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="Transform.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="Random.h">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="common.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="Ray.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="Sampling.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="Material.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="KeyframesSequence.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="CSG.h">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Scene.h">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Shape.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="BxDF.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="HitInfo.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="Progress.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="Timer.h">
       <Filter>Исходные файлы\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="AABBTree.h">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClInclude>
     <ClInclude Include="DirectLighting.h">
-      <Filter>Исходные файлы\Common\Tracers</Filter>
+      <Filter>Исходные файлы\Tracers</Filter>
     </ClInclude>
     <ClInclude Include="WhittedTracer.h">
-      <Filter>Исходные файлы\Common\Tracers</Filter>
+      <Filter>Исходные файлы\Tracers</Filter>
     </ClInclude>
     <ClInclude Include="Sphere.h">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClInclude>
     <ClInclude Include="Box.h">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClInclude>
     <ClInclude Include="PlanarShape.h">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClInclude>
     <ClInclude Include="Mesh.h">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClInclude>
     <ClInclude Include="Disk.h">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClInclude>
     <ClInclude Include="Rect.h">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClInclude>
     <ClInclude Include="Plane.h">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClInclude>
     <ClInclude Include="Triangle.h">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClInclude>
     <ClInclude Include="Cylinder.h">
-      <Filter>Исходные файлы\Common\Shapes</Filter>
+      <Filter>Исходные файлы\Core\Shapes</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
-      <Filter>Исходные файлы\Common\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="Function1D.h">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Distribution1D.h">
-      <Filter>Исходные файлы\Common</Filter>
+      <Filter>Исходные файлы\Core\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Scenes.h">
-      <Filter>Исходные файлы\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Tracer.h">
-      <Filter>Исходные файлы\Common\Tracers</Filter>
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
     <ClInclude Include="Light.h">
-      <Filter>Исходные файлы\Common\Light</Filter>
+      <Filter>Исходные файлы\Core\Scene\Light</Filter>
     </ClInclude>
     <ClInclude Include="Image.h">
       <Filter>Исходные файлы\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="testPointLocators.h">
+      <Filter>Исходные файлы\Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="SPPM.h">
+      <Filter>Исходные файлы\Tracers</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>Исходные файлы\Core\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Primitive.h">
+      <Filter>Исходные файлы\Core\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Debug.h">
+      <Filter>Исходные файлы\Tracers</Filter>
+    </ClInclude>
+    <ClInclude Include="BSDF.h">
+      <Filter>Исходные файлы\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Intersectable.h">
+      <Filter>Исходные файлы\Core\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Исходные файлы\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Refraction.h">
+      <Filter>Исходные файлы\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Shape.h">
+      <Filter>Исходные файлы\Core\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>Исходные файлы\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Function1D.h">
+      <Filter>Исходные файлы\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Distribution1D.h">
+      <Filter>Исходные файлы\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>Исходные файлы\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Accelerators\Point Locators\AABBTree.h">
+      <Filter>Исходные файлы\Core\PointLocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Accelerators\Point Locators\Base.h">
+      <Filter>Исходные файлы\Core\PointLocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Accelerators\Point Locators\BruteForce.h">
+      <Filter>Исходные файлы\Core\PointLocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Accelerators\Point Locators\Grid.h">
+      <Filter>Исходные файлы\Core\PointLocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Accelerators\Point Locators\KdTree.h">
+      <Filter>Исходные файлы\Core\PointLocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Accelerators\Primitive Locators\AABBTree.h">
+      <Filter>Исходные файлы\Core\PrimitiveLocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Accelerators\Primitive Locators\Base.h">
+      <Filter>Исходные файлы\Core\PrimitiveLocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Accelerators\Primitive Locators\BruteForce.h">
+      <Filter>Исходные файлы\Core\PrimitiveLocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Accelerators\Primitive Locators\Grid.h">
+      <Filter>Исходные файлы\Core\PrimitiveLocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Accelerators\Primitive Locators\KdTree.h">
+      <Filter>Исходные файлы\Core\PrimitiveLocators</Filter>
+    </ClInclude>
+    <ClInclude Include="testAccelerators.h">
+      <Filter>Исходные файлы\Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="BSphere3D.h">
+      <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

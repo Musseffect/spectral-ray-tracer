@@ -36,6 +36,15 @@ bool BBox3D::isInBall(const vec3& center, float radiusSqr) const {
 	return glm::length2(diff) <= radiusSqr;
 }
 
+bool BBox3D::contains(const BBox3D& box) const {
+	return box._min.x >= _min.x &&
+			box._min.y >= _min.y &&
+			box._min.z >= _min.z &&
+			box._max.x <= _max.x &&
+			box._max.y <= _max.y &&
+			box._max.z <= _max.z;
+}
+
 float BBox3D::outerDistToBox(vec3 p, vec3 size) {
 	vec3 r = glm::abs(p) - size;
 	return length(glm::max(r, vec3(0.0)));
@@ -98,10 +107,10 @@ BBox3D BBox3D::append(const glm::vec3& p) {
 	return *this;
 }
 
-bool BBox3D::intersect(const Ray& ray) const {
+bool BBox3D::intersectInclusive(const Ray& ray) const {
 	vec3 inv = vec3(1.0) / ray.rd;
-	vec3 s = (_max - _min) * 0.5f * glm::abs(inv);
-	vec3 o = ((_max + _min) * 0.5f - ray.ro) * inv;
+	vec3 s = size() * 0.5f * glm::abs(inv);
+	vec3 o = (center() - ray.ro) * inv;
 	vec3 tmin = -s + o;
 	vec3 tmax = s + o;
 	float tNear = std::max(std::max(tmin.x, tmin.y), tmin.z);
@@ -109,6 +118,39 @@ bool BBox3D::intersect(const Ray& ray) const {
 	if (tNear > tFar)
 		return false;
 	if ((tNear < ray.tMin || tNear > ray.tMax) && (tFar < ray.tMin || tFar > ray.tMax))
+		return false;
+	return true;
+}
+bool BBox3D::intersectInclusive(const Ray& ray, float& t) const {
+	vec3 inv = vec3(1.0) / ray.rd;
+	vec3 s = size() * 0.5f * glm::abs(inv);
+	vec3 o = (center() - ray.ro) * inv;
+	vec3 tmin = -s + o;
+	vec3 tmax = s + o;
+	float tNear = std::max(std::max(tmin.x, tmin.y), tmin.z);
+	float tFar = std::max(std::max(tmax.x, tmax.y), tmax.z);
+	if (tNear > tFar)
+		return false;
+	if (!(tNear < ray.tMin || tNear > ray.tMax)) {
+		t = tNear;
+		return true;
+	}
+	if (!(tFar < ray.tMin || tFar > ray.tMax)) {
+		t = tFar;
+		return false;
+	}
+	return false;
+}
+
+bool BBox3D::intersect(const Ray& ray) const {
+	vec3 inv = vec3(1.0) / ray.rd;
+	vec3 s = size() * 0.5f * glm::abs(inv);
+	vec3 o = (center() - ray.ro) * inv;
+	vec3 tmin = -s + o;
+	vec3 tmax = s + o;
+	float tNear = std::max(std::max(tmin.x, tmin.y), tmin.z);
+	float tFar = std::max(std::max(tmax.x, tmax.y), tmax.z);
+	if (tNear > tFar || tFar < ray.tMin || tNear > ray.tMax)
 		return false;
 	return true;
 }
@@ -152,4 +194,11 @@ int BBox3D::maxExtentDirection() const {
 float BBox3D::area() const {
 	vec3 _size = size();
 	return 2.0f * (_size.x * _size.y + _size.y * _size.z + _size.x * _size.z);
+}
+
+template<>
+bool BBox3D::intersect<vec3>(const vec3& p) const {
+	return p.x >= _min.x && p.x <= _max.x &&
+		p.y >= _min.y && p.y <= _max.y &&
+		p.z >= _min.z && p.z <= _max.z;
 }

@@ -18,9 +18,8 @@
 
 #define EPSILON 0.00001f
 
-class SceneObject;
+class Primitive;
 class Light;
-class Scene;
 
 struct Interval {
 	float min;
@@ -49,9 +48,7 @@ public:
 	virtual float area() const = 0;
 	virtual float pdf() const { return 1.0f / area(); }
 	virtual HitInfo sample() const = 0;
-	// sample in local coordinates
-	virtual HitInfo sample(const vec3& localPos, const Affine& transform, float& pdf) const;
-	virtual float pdf(const vec3& pos, const vec3& wi, const Affine& transform, const Scene* scene) const;
+	virtual float pdf(const vec3& pos, const vec3& wi, const Affine& transform) const;
 };
 
 using spShape = std::shared_ptr<Shape>;

@@ -11,7 +11,7 @@ BBox3D Disc::bbox() const {
 HitInfo Disc::sample() const {
 	HitInfo result;
 	result.normal = vec3(0.0f, 1.0f, 0.0f);
-	vec2 sample = Sampling::sampleDisk(radius);
+	vec2 sample = Sampling::uniformDisk(radius);
 	result.localPosition = vec3(sample.x, 0.0f, sample.y);
 	return result;
 }

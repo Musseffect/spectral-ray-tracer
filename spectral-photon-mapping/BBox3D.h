@@ -16,6 +16,9 @@ struct BBox3D {
 	vec3 size() const;
 	bool isEmpty() const;
 	bool isInBall(const vec3& center, float radiusSqr) const;
+	template<class Point>
+	bool intersect(const Point& p) const;
+	bool contains(const BBox3D& box) const;
 	// clamped positive distance to box
 	static float outerDistToBox(vec3 p, vec3 size);
 	static float outerSqrDistToBox(vec3 p, vec3 size);
@@ -34,6 +37,8 @@ struct BBox3D {
 	BBox3D(const std::vector<glm::vec3>& points);
 	BBox3D append(const BBox3D& box);
 	BBox3D append(const glm::vec3& p);
+	bool intersectInclusive(const Ray& ray) const;
+	bool intersectInclusive(const Ray& ray, float& t) const;
 	bool intersect(const Ray& ray) const;
 	int maxExtentDirection() const;
 	float area() const;
@@ -65,3 +70,15 @@ BBox3D::BBox3D(const Iterator& begin, const Iterator& end)
 		_max = glm::max(*it, _max);
 	}
 }
+
+
+template<class Point>
+bool BBox3D::intersect(const Point& p) const {
+	vec3 position = p.position();
+	return position.x >= _min.x && position.x <= _max.x &&
+		position.y >= _min.y && position.y <= _max.y &&
+		position.z >= _min.z && position.z <= _max.z;
+}
+
+template<>
+bool BBox3D::intersect<vec3>(const vec3& p) const;

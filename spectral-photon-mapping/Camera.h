@@ -3,9 +3,9 @@
 #include "Transform.h"
 #include "Sampling.h"
 
-#define up vec3(0.0, 1.0, 0.0)
-#define right vec3(1.0, 0.0, 0.0)
-#define forward vec3(0.0, 0.0, -1.0)
+const vec3 up(0.0f, 1.0f, 0.0f);
+const vec3 right(1.0, 0.0, 0.0);
+const vec3 forward(0.0, 0.0, -1.0);
 
 class Camera {
 protected:
@@ -34,7 +34,7 @@ public:
 		ray.ro = vec3(0.0);
 		ray.rd = glm::normalize(forward + glm::tan(fov) * (right * ndc.x / aspectRatio + up * ndc.y));
 	    vec3 fp = ray.ro + ray.rd * focus;
-		vec2 shift = Sampling::sampleDisk(aperture);
+		vec2 shift = Sampling::uniformDisk(aperture);
 		ray.ro = ray.ro + right * shift.x +  up * shift.y;
 		ray.rd = glm::normalize(fp - ray.ro);
 		return cameraToWorld.transform(ray);
@@ -55,7 +55,7 @@ public:
 		ray.ro = h * (up * ndc.y + right * ndc.x / aspectRatio);
 		ray.rd = forward;
 		vec3 fp = ray.ro + ray.rd * focus;
-		vec2 shift = Sampling::sampleDisk(aperture);
+		vec2 shift = Sampling::uniformDisk(aperture);
 		ray.ro = ray.ro + right * shift.x + up * shift.y;
 		ray.rd = glm::normalize(fp - ray.ro);
 		return cameraToWorld.transform(ray);

@@ -5,7 +5,7 @@ Triangle::Triangle(const vec3& p0, const vec3& p1, const vec3& p2) : _v0(p0), _v
 {
 	vec3 v20 = p2 - p0;
 	vec3 v10 = p1 - p0;
-	_normal = glm::cross(v20, v10);
+	_normal = glm::cross(v10, v20);
 	_area = glm::length(_normal);
 	_normal = _normal / _area;
 }
@@ -78,7 +78,7 @@ float Triangle::area() const {
 }
 HitInfo Triangle::sample() const {
 	HitInfo result;
-	result.localPosition = Sampling::randomTriangle(_v0, _v1, _v2);
+	result.localPosition = Sampling::uniformTriangle(_v0, _v1, _v2);
 	result.normal = _normal;
 	return result;
 }

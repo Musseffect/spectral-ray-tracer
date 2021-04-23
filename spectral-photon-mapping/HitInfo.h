@@ -1,7 +1,7 @@
 #pragma once
 #include "common.h"
 
-class SceneObject;
+class Primitive;
 class Light;
 
 
@@ -11,7 +11,7 @@ struct HitInfo {
 	vec3 normal;
 	vec2 uv;
 	float t;
-	SceneObject* sceneObject = nullptr;
-	Light* light = nullptr;
+	const Primitive* primitive = nullptr;
+	const Light* light = nullptr;
 	float lightEmitted(const vec3& wo, float wavelength) const;
 };

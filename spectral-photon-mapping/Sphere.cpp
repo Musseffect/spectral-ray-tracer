@@ -63,7 +63,7 @@ std::vector<Interval> Sphere::intersectionList(const Ray& ray) const {
 
 HitInfo Sphere::sample() const {
 	HitInfo result;
-	result.localPosition = radius * Sampling::sampleSphere() + center;
+	result.localPosition = radius * Sampling::uniformSphere() + center;
 	result.normal = glm::normalize(result.localPosition - center);
 	return result;
 }
