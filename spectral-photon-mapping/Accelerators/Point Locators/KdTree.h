@@ -2,9 +2,24 @@
 #include "Base.h"
 
 namespace PointLocators {
+	template<class Point>
+	class KdTree;
+
+	class KdTreePointPrimitiveSearch {
+		template<class Point, class Primitive>
+		static std::vector<Point*> pointsWithinBounds(KdTree<Point>* accelerator, const Primitive& primitive) {
+			std::vector<Point*> result;
+			if (accelerator->isEmpty())
+				return result;
+			if (!primitive.intersect(accelerator->nodes[0].bbox))
+				return result;
+			accelerator->pointsWithinBounds(accelerator->nodes[0], primitive, result);
+			return result;
+		}
+	};
 
 	template<class Point>
-	class KdTree{
+	class KdTree : Base<Point, KdTreePointPrimitiveSearch>{
 		struct KdNode {
 			enum Type : unsigned int {
 				SPLIT_X = 0,
@@ -20,36 +35,35 @@ namespace PointLocators {
 				:splitType(splitType), leftId(leftId), rightId(rightId), splitCoord(splitCoord), bbox(bbox)
 			{}
 		};
-		std::vector<Point> points;
+		AABB bounds;
 		std::vector<KdNode> nodes;
-		BBox3D bounds;
+		using Base<Point, KdTreePointPrimitiveSearch>::points;
 		int maxPointsInNode;
 		// orthogonal search from
 		// https://doc.cgal.org/latest/Spatial_searching/index.html
-		void appendNodes(const KdNode& current, std::vector<Point>& result) const;
+		void appendNodes(const KdNode& current, std::vector<Point*>& result) const;
 		void appendNodes(const KdNode& current, std::vector<int>& result) const;
-		void pointsWithinRadius(const KdNode& current, const BBox3D& currentBBox, const vec3& center, float radiusSqr, float parentDistanceSqr, std::vector<Point>& result) const;
+		void pointsWithinRadius(const KdNode& current, const AABB& currentBounds, const vec3& center, float radiusSqr, float parentDistanceSqr, std::vector<Point*>& result) const;
 		template<class Primitive>
-		void pointsWithinBounds(const KdNode& current, const BBox3D& currentBBox, const Primitive& primitive, std::vector<Point*>& result) const;
+		void pointsWithinBounds(const KdNode& current, const Primitive& primitive, std::vector<Point*>& result) const;
 		void indicesWithinRadius(const KdNode& current, const vec3& center, float radiusSqr, float parentDistanceSqr, std::vector<int>& result) const;
-		void build(typename const std::vector<Point>::iterator& begin, typename const std::vector<Point>::iterator& end, int depth, const BBox3D& bounds, int nodeIndex);
+		template<class Iterator>
+		void build(Iterator begin, Iterator end, int depth, const BBox3D& bounds, int nodeIndex);
 	public:
 		template<class Iterator>
 		KdTree(Iterator begin, Iterator end, int maxPointsInNode = 10, int maxDepth = -1);
 		std::vector<Point*> pointsWithinRadius(const vec3& center, float radius) const;
 		std::vector<int> indicesWithinRadius(const vec3& center, float radius) const;
-		template<class Primitive>
-		std::vector<Point*> pointsWithinBounds(const Primitive& primitive) const;
-		const Point& pointAt(int index) const;
-		bool isEmpty() const;
+		using Base<Point, KdTreePointPrimitiveSearch>::pointAt;
+		using Base<Point, KdTreePointPrimitiveSearch>::isEmpty;
 	};
 
 	template<class Point>
-	void KdTree<Point>::appendNodes(const KdNode& current, std::vector<Point>& result) const {
+	void KdTree<Point>::appendNodes(const KdNode& current, std::vector<Point*>& result) const {
 		const int splitType = current.splitType;
 		if (splitType == KdNode::Type::LEAF) {
 			for (int index = current.leftId; index < current.rightId; ++index) {
-				const auto& point = points[index];
+				auto* point = points[index];
 				result.push_back(point);
 			}
 			return;
@@ -72,7 +86,7 @@ namespace PointLocators {
 	}
 
 	template<class Point>
-	void KdTree<Point>::pointsWithinRadius(const KdNode& current, const BBox3D& currentBBox, const vec3& center, float radiusSqr, float parentDistanceSqr, std::vector<Point>& result) const {
+	void KdTree<Point>::pointsWithinRadius(const KdNode& current, const AABB& currentBounds, const vec3& center, float radiusSqr, float parentDistanceSqr, std::vector<Point*>& result) const {
 		const float Eps = 0.0001f;
 		if (parentDistanceSqr > radiusSqr + Eps)
 			return;
@@ -83,16 +97,16 @@ namespace PointLocators {
 		const int splitType = current.splitType;
 		if (splitType == KdNode::Type::LEAF) {
 			for (int index = current.leftId; index < current.rightId; ++index) {
-				const auto& point = points[index];
-				if (glm::length2(point.coords() - center) <= radiusSqr)
+				auto* point = points[index];
+				if (glm::length2(point->position() - center) <= radiusSqr)
 					result.push_back(point);
 			}
 			return;
 		}
 		const KdNode* const childs[2] = { &nodes[current.leftId], &nodes[current.rightId] };
 
-		BBox3D childBBoxes[2] = { currentBBox, currentBBox };
-		const float cuttingValue = currentBBox._min[splitType] + current.splitCoord * (currentBBox._max[splitType] - childBBoxes[0]._min[splitType]);
+		BBox3D childBBoxes[2] = { currentBounds, currentBounds };
+		const float cuttingValue = currentBounds.min()[splitType] + current.splitCoord * (currentBounds.max()[splitType] - childBBoxes[0].min()[splitType]);
 		childBBoxes[0]._max[splitType] = cuttingValue;
 		childBBoxes[1]._min[splitType] = childBBoxes[0]._max[splitType];
 
@@ -108,26 +122,20 @@ namespace PointLocators {
 
 	template<class Point>
 	template<class Primitive>
-	void KdTree<Point>::pointsWithinBounds(const KdNode& current, const BBox3D& currentBBox, const Primitive& primitive, std::vector<Point*>& result) const {
-		if (!primitive.intersect(currentBBox))
+	void KdTree<Point>::pointsWithinBounds(const KdNode& current, const Primitive& primitive, std::vector<Point*>& result) const {
+		if (!primitive.intersect(current.bbox))
 			return;
 		const int splitType = current.splitType;
 		if (splitType == KdNode::Type::LEAF) {
 			for (int index = current.leftId; index < current.rightId; ++index) {
-				const auto& point = points[index];
-				if (primitive.intersect(point))
+				auto* point = points[index];
+				if (primitive.intersect(*point))
 					result.push_back(point);
 			}
 			return;
 		}
-		const KdNode* const childs[2] = { &nodes[current.leftId], &nodes[current.rightId] };
-
-		BBox3D childBBoxes[2] = { currentBBox, currentBBox };
-		const float cuttingValue = currentBBox._min[splitType] + current.splitCoord * (currentBBox._max[splitType] - childBBoxes[0]._min[splitType]);
-		childBBoxes[0]._max[splitType] = cuttingValue;
-		childBBoxes[1]._min[splitType] = childBBoxes[0]._max[splitType];
-		pointsWithinRadius(*childs[0], childBBoxes[0], primitive, result);
-		pointsWithinRadius(*childs[1], childBBoxes[1], primitive, result);
+		pointsWithinBounds(nodes[current.leftId], primitive, result);
+		pointsWithinBounds(nodes[current.rightId], primitive, result);
 	}
 
 	template<class Point>
@@ -142,8 +150,8 @@ namespace PointLocators {
 		const int splitType = current.splitType;
 		if (splitType == KdNode::Type::LEAF) {
 			for (int index = current.leftId; index < current.rightId; ++index) {
-				const auto& point = points[index];
-				if (glm::length2(point.position() - center) <= radiusSqr)
+				auto* point = points[index];
+				if (glm::length2(point->position() - center) <= radiusSqr)
 					result.push_back(index);
 			}
 			return;
@@ -155,7 +163,8 @@ namespace PointLocators {
 	}
 
 	template<class Point>
-	void KdTree<Point>::build(typename const std::vector<Point>::iterator& begin, typename const std::vector<Point>::iterator& end, int depth, const BBox3D& bounds, int nodeIndex) {
+	template<class Iterator>
+	void KdTree<Point>::build(Iterator begin, Iterator end, int depth, const BBox3D& bounds, int nodeIndex) {
 		int size = std::distance(begin, end);
 		assert(size != 0);
 		int splitCoord = bounds.maxExtentDirection();
@@ -164,7 +173,7 @@ namespace PointLocators {
 			int endIndex = startIndex + size;
 			BBox3D bbox;
 			for (int i = startIndex; i < endIndex; ++i)
-				bbox.append(points[i].position());
+				bbox.append(points[i]->position());
 			nodes[nodeIndex].splitType = 3;
 			nodes[nodeIndex].leftId = startIndex;
 			nodes[nodeIndex].rightId = endIndex;
@@ -172,15 +181,15 @@ namespace PointLocators {
 			return;
 		}
 		const int median = size / 2;
-		typename std::vector<Point>::iterator medianIt = std::next(begin, median);
+		Iterator medianIt = std::next(begin, median);
 		std::nth_element(begin, medianIt, end,
-			[splitCoord](const Point& a, const Point& b) {
-			return a.position()[splitCoord] < b.position()[splitCoord];
+			[splitCoord](const Point* a, const Point* b) {
+			return a->position()[splitCoord] < b->position()[splitCoord];
 		});
 		BBox3D childBounds[2] = { bounds, bounds };
-		childBounds[0]._max[splitCoord] = medianIt->position()[splitCoord];
-		childBounds[1]._min[splitCoord] = medianIt->position()[splitCoord];
-		const float splitValue = (medianIt->position()[splitCoord] - bounds._min[splitCoord]) / bounds.size()[splitCoord];
+		childBounds[0]._max[splitCoord] = (*medianIt)->position()[splitCoord];
+		childBounds[1]._min[splitCoord] = (*medianIt)->position()[splitCoord];
+		const float splitValue = ((*medianIt)->position()[splitCoord] - bounds._min[splitCoord]) / bounds.size()[splitCoord];
 		int leftId = nodes.size();
 		nodes.emplace_back(0, 0, -1, 0.5f, BBox3D());
 		int rightId = nodes.size();
@@ -201,12 +210,10 @@ namespace PointLocators {
 		int size = std::distance(begin, end);
 		if (size == 0)
 			return;
-		points.resize(size);
-		int index = 0;
+		points.reserve(size);
 		for (Iterator it = begin; it != end; ++it) {
-			points[index] = (*it);
+			points.push_back(&(*it));
 			bounds.append(it->position());
-			++index;
 		}
 		if (maxDepth <= 0)
 			maxDepth = std::round(8 + 1.3f * glm::log2(points.size()));
@@ -228,21 +235,5 @@ namespace PointLocators {
 		if (!isEmpty())
 			indicesWithinRadius(nodes[0], center, radius * radius, bounds.outerSqrDistance(center), result);
 		return result;
-	}
-
-	template<class Point>
-	template<class Primitive>
-	std::vector<Point*> KdTree<Point>::pointsWithinBounds(const Primitive& primitive) const {
-		std::vector<Point*> result;
-		return result;
-	}
-	template<class Point>
-	const Point& KdTree<Point>::pointAt(int index) const {
-		assert(index >= 0 && index < points.size());
-		return points[index];
-	}
-	template<class Point>
-	bool KdTree<Point>::isEmpty() const {
-		return points.size() == 0;
 	}
 }

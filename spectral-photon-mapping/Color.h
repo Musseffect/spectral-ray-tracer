@@ -20,25 +20,8 @@ class ColorSampler;
 
 vec3 XYZToRGB(vec3 xyz);
 
-// integral of multiplication of piecewise linear curves based on regularly sampled values from two distributions
-float multiply(const ColorSampler* const a, const ColorSampler* const b, float min, float max, int samples = 60) {
-	assert(samples != 1);
-	float value = 0.0;
-	float aCur = a->sample(min);
-	float bCur = b->sample(min);
-	float dx = (max - min) / float(samples);
-	for (int i = 1; i < samples; ++i) {
-		float x = (max - min) * i / float(samples) + min;
-		float aNext = a->sample(x);
-		float bNext = b->sample(x);
-		float da = aNext - aCur;
-		float db = bNext - bCur;
-		value += aCur * bCur + (aCur * db + bCur * da) * 0.5f + da * db / 3.0f;
-		aCur = aNext;
-		bCur = bNext;
-	}
-	return value * dx;
-}
+// integral of product of piecewise linear curves based on regularly sampled values from two distributions
+float integratProduct(const ColorSampler* const a, const ColorSampler* const b, float min, float max, int samples = 60);
 
 template<class T>
 T xFit_1931(T wave) {

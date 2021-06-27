@@ -1,46 +1,91 @@
 #pragma once
 #include "Base.h"
+#include <functional>
 
 namespace PrimitiveLocators {
-	static const float Epsilon = 0.000001f;
 	template<class Primitive, class TreeBuilder>
 	class AABBTree;
 
-	template<class Primitive>
-	class SplitMiddleTreeBuilder {};
-	template<class Primitive>
-	class SplitEqualCountsTreeBuilder {
-		using Tree = AABBTree<Primitive, SplitEqualCountsTreeBuilder<Primitive>>;
+	/// Separate axis on two equal width halfs
+	template<class Primitive, int minPrims = 1, bool useMaxDir = false>
+	class MiddleTreeBuilder {
+		using Tree = AABBTree<Primitive, MiddleTreeBuilder<Primitive, minPrims, useMaxDir>>;
 		friend class Tree;
+	protected:
 		static void build(int begin, int end, int depth, const AABB& bounds, int nodeId, std::vector<int>& tempIndices, Tree& tree) {
-			int size = end - begin;
-			if (size == 1 || depth == 0) {
+			int numPrims = end - begin;
+			if (numPrims <= minPrims || depth == 0) {
 				tree.addLeaf(begin, end, depth, bounds, tempIndices);
 				return;
 			}
-			AABB centroidBounds;
+			AABB centroidBBox;
 			for (int i = begin; i < end; ++i)
-				centroidBounds.append(tree.boundsArray[tempIndices[i]]);
-			int dimension = centroidBounds.maxExtentDirection();
-			if (centroidBounds.max()[dimension] == centroidBounds.min()[dimension]) {
+				centroidBBox.append(tree.boundsArray[tempIndices[i]]);
+			int dim = centroidBBox.maxExtentDirection();
+			if (centroidBBox.max()[dim] == centroidBBox.min()[dim]) {
+				tree.addLeaf(begin, end, depth, bounds, tempIndices);
+				return;
+			}
+			float middlePlane = 0.5 * (bounds.max() + bounds.min());
+
+			int* midPtr = std::partition(&tempIndices[begin], &tempIndices[end - 1] + 1,
+				[dim, middlePlane, &bounds = tree.boundsArray](int index) {
+				return bounds[index].center()[dim] < middlePlane;
+			});
+			int middle = midPtr - &tempIndices.begin()[0];
+			if (middle == begin && middle == end) {
+				tree.addLeaf(begin, end, depth, bounds, tempIndices);
+				return;
+			}
+			AABB left;
+			tree.nodes.emplace_back(Tree::Node::Type::Inter, 0, 0, bounds);
+			for (int i = begin; i < middle; ++i) {
+				left.append(tree.boundsArray[tempIndices[i]]);
+			}
+			tree.nodes[nodeId].firstChild = nodeId + 1;
+			build(begin, middle, depth - 1, left, nodeId + 1, tempIndices, tree);
+			AABB right;
+			for (int i = middle; i < end; ++i) {
+				right.append(tree.boundsArray[tempIndices[i]]);
+			}
+			tree.nodes[nodeId].secondChild = tree.nodes.size();
+			build(middle, end, depth - 1, right, tree.nodes.size(), tempIndices, tree);
+		}
+	};
+	// TODO test
+	/// divide
+	template<class Primitive, int minPrims = 1>
+	class EqualCountsTreeBuilder {
+		using Tree = AABBTree<Primitive, EqualCountsTreeBuilder<Primitive, minPrims>>;
+		friend class Tree;
+	protected:
+		static void build(int begin, int end, int depth, const AABB& bounds, int nodeId, std::vector<int>& tempIndices, Tree& tree) {
+			int numPrims = end - begin;
+			if (numPrims <= minPrims || depth == 0) {
+				tree.addLeaf(begin, end, depth, bounds, tempIndices);
+				return;
+			}
+			AABB centroidBBox;
+			for (int i = begin; i < end; ++i)
+				centroidBBox.append(tree.boundsArray[tempIndices[i]]);
+			int dim = centroidBBox.maxExtentDirection();
+			if (centroidBBox.max()[dim] == centroidBBox.min()[dim]) {
 				tree.addLeaf(begin, end, depth, bounds, tempIndices);
 				return;
 			}
 			int mid = (begin + end) / 2;
 			std::nth_element(&tempIndices[begin], &tempIndices[mid],
 				&tempIndices[end - 1] + 1,
-				[dimension, bounds = tree.boundsArray](int a, int b) {
-				return bounds[a].center()[dimension] < bounds[b].center()[dimension];
+				[&dim, &bounds = tree.boundsArray](int a, int b) {
+				return bounds[a].center()[dim] < bounds[b].center()[dim];
 			});
 			AABB left;
 			tree.nodes.emplace_back(Tree::Node::Type::Inter, 0, 0, bounds);
-			std::vector<int> leftIndices(mid - begin);
 			for (int i = begin; i < mid; ++i) {
 				left.append(tree.boundsArray[tempIndices[i]]);
-				leftIndices[i - begin] = tempIndices[i];
 			}
 			tree.nodes[nodeId].firstChild = nodeId + 1;
-			build(0, mid - begin, depth - 1, left, nodeId + 1, leftIndices, tree);
+			build(begin, mid, depth - 1, left, nodeId + 1, tempIndices, tree);
 			AABB right;
 			for (int i = mid; i < end; ++i) {
 				right.append(tree.boundsArray[tempIndices[i]]);
@@ -49,37 +94,132 @@ namespace PrimitiveLocators {
 			build(mid, end, depth - 1, right, tree.nodes.size(), tempIndices, tree);
 		}
 	};
-	template<class Primitive>
-	class SplitBucketSAHTreeBuilder {};
-	template<class Primitive>
-	class SplitSAHMaxDirTreeBuilder {};
-
-	template<class Primitive>
-	class SAHTreeBuilder {
-		using Tree = AABBTree<Primitive, SAHTreeBuilder<Primitive>>;
+	// todo: TEST
+	/// Bucketed Surface-Area-Heuristic builder
+	template<class Primitive, int minPrims = 1, bool useMaxDir = false, int bucketSize = 12>
+	class BucketSAHTreeBuilder {
+		using Tree = AABBTree<Primitive, BucketSAHTreeBuilder<Primitive, minPrims, useMaxDir, bucketSize>>;
 		friend class Tree;
-		static void build(int begin, int end, int depth, const AABB& bounds, int nodeId, std::vector<int>& tempIndices, Tree& tree) {
-			int size = end - begin;
-			if (size == 1 || depth == 0) {
+	protected:
+		static void build(int begin, int end, int depth, const AABB& bounds, int nodeId, std::vector<int>& tempIndices, Tree& tree, int minPrims) {
+			int numPrims = end - begin;
+			if (numPrims <= minPrims || depth == 0) {
 				tree.addLeaf(begin, end, depth, bounds, tempIndices);
 				return;
 			}
-			AABB centroidBounds;
+			AABB centroidBBox;
 			for (int i = begin; i < end; ++i)
-				centroidBounds.append(tree.boundsArray[tempIndices[i]]);
+				centroidBBox.append(tree.boundsArray[tempIndices[i]]);
+
+			struct Bucket {
+				AABB bbox;
+				int count = 0;
+			};
+
 			float bboxArea = bounds.area();
-			int minDimension = 0;
-			float minCostPlane = -1;
-			float minCost = std::numeric_limits <float>::max();
-			for (int dimension = 0; dimension < 3; dimension++) {
-				if (centroidBounds.max()[dimension] == centroidBounds.min()[dimension])
+
+			float minCost = std::numeric_limits<float>::max();
+			int minCostPlane = -1;
+			int minDim = -1;
+			for (int dim = 0; dim < 3; ++dim) {
+				if (centroidBBox.max()[dim] == centroidBBox.min()[dim])
 					continue;
-				const float TTraverse = 0.125f;
-				const float TInters = 1.0f;
+				float bucketWidth = centroidBBox.size()[dim] / float(bucketSize);
+				Bucket buckets[bucketSize];
+				for (int i = begin; i != end; ++i) {
+					int primitiveId = tempIndices[i];
+					float centroid = tree.boundsArray[primitiveId].center()[dim] - centroidBBox.min()[dim];
+					int bucketId = std::min(bucketSize - 1, centroid / bucketWidth);
+					buckets[bucketId].count++;
+					buckets[bucketId].bbox.append(tree.boundsArray[primitiveId]);
+				}
+				for (int planeId = 1; planeId < bucketSize; ++planeId) {
+					int leftItems = 0;
+					int rightItems = 0;
+					AABB leftBBox;
+					AABB rightBBox;
+					for (int id = 0; id < planeId; ++id) {
+						leftItems += buckets[id].count;
+						leftBBox.append(buckets[id].bbox);
+					}
+					for (int id = planeId; id < bucketSize; ++id) {
+						rightItems += buckets[id].count;
+						rightBBox.append(buckets[id].bbox);
+					}
+
+					const float TTraverse = 0.125f;
+					const float TInters = 1.0f;
+					float cost = TTraverse + (leftItems * TInters * leftBBox.area() + rightItems * TTraverse * rightBBox.area()) / bboxArea;
+					if (cost <= minCost) {
+						minCost = cost;
+						minCostPlane = planeId;
+						minDim = dim;
+					}
+				}
+			}
+			if (minCostPlane == -1 || minCost > numPrims) {
+				tree.addLeaf(begin, end, depth, bounds, tempIndices);
+				return;
+			}
+			float bucketWidth = centroidBBox.size()[minDim] / float(bucketSize);
+			int* midPtr = std::partition(&tempIndices[begin],
+				&tempIndices[end - 1] + 1,
+				[minDim, bucketWidth, minCostPlane, &tempIndices](int id) {
+				int primitiveId = tempIndices[id];
+				float centroid = tree.boundsArray[primitiveId].center()[minDim] - centroidBBox.min()[minDim];
+				int bucketId = std::min(bucketSize - 1, centroid / bucketWidth);
+				return bucketId <= minCostPlane;
+			});
+			int middle = midPtr - &tempIndices.begin();
+			//NOT_IMPLEMENTED();
+			AABB left;
+			tree.nodes.emplace_back(Tree::Node::Type::Inter, 0, 0, bounds);
+			for (int i = begin; i < middle; ++i) {
+				left.append(tree.boundsArray[tempIndices[i]]);
+			}
+			build(begin, middle, depth - 1, left, nodeId + 1, tempIndices, tree);
+			AABB right;
+			for (int i = middle; i < end; ++i) {
+				right.append(tree.boundsArray[tempIndices[i]]);
+			}
+			tree.nodes[nodeId].secondChild = tree.nodes.size();
+			build(middle, end, depth - 1, right, tree.nodes.size(), tempIndices, tree);
+
+		}
+
+	};
+
+	// FULL SAH with overlapping boxes, slow as fuck
+	template<class Primitive, int minPrims = 1, bool useMaxDir = false>
+	class FullSAHTreeBuilder {
+		using Tree = AABBTree<Primitive, FullSAHTreeBuilder<Primitive, minPrims, useMaxDir>>;
+		friend class Tree;
+	protected:
+		static void build(int begin, int end, int depth, const AABB& bounds, int nodeId, std::vector<int>& tempIndices, Tree& tree) {
+			int numPrims = end - begin;
+			if (numPrims <= minPrims || depth == 0) {
+				tree.addLeaf(begin, end, depth, bounds, tempIndices);
+				return;
+			}
+			AABB centroidBBox;
+			for (int i = begin; i < end; ++i)
+				centroidBBox.append(tree.boundsArray[tempIndices[i]]);
+			float bboxArea = bounds.area();
+			int minCostDim = 0;
+			float minCostPlane = -1;
+			float minCost = std::numeric_limits<float>::max();
+			int minDim = 0;
+			int maxDim = 2;
+			if (useMaxDir) {
+				minDim = maxDim = bounds.maxExtentDirection();
+			}
+			for (int dim = minDim; dim <= maxDim; dim++) {
+				if (centroidBBox.max()[dim] == centroidBBox.min()[dim])
+					continue;
 				for (int i = begin; i < end; ++i) {
-					int primitiveIDFirst = tempIndices[i];
-					float min = tree.boundsArray[primitiveIDFirst].min()[dimension];
-					float max = tree.boundsArray[primitiveIDFirst].max()[dimension];
+					int primitiveIdFirst = tempIndices[i];
+					float min = tree.boundsArray[primitiveIdFirst].min()[dim];
+					float max = tree.boundsArray[primitiveIdFirst].max()[dim];
 					for (float plane : { min, max}) {
 						int leftItems = 0;
 						int rightItems = 0;
@@ -87,37 +227,41 @@ namespace PrimitiveLocators {
 						AABB left;
 						AABB right;
 						float costRight = 0.0f;
+						const float TTraverse = 0.125f;
+						const float TInters = 1.0f;
 						for (int j = begin; j < end; ++j) {
-							int primitiveID = tempIndices[j];
-							if (tree.boundsArray[primitiveID].min()[dimension] <= plane) {
+							int primitiveId = tempIndices[j];
+							if (tree.boundsArray[primitiveId].min()[dim] <= plane) {
 								costLeft += TInters;
-								left.append(tree.boundsArray[primitiveID]);
+								left.append(tree.boundsArray[primitiveId]);
 								leftItems++;
 							}
-							if (tree.boundsArray[primitiveID].max()[dimension] >= plane) {
+							if (tree.boundsArray[primitiveId].max()[dim] >= plane) {
 								costRight += TInters;
-								right.append(tree.boundsArray[primitiveID]);
+								right.append(tree.boundsArray[primitiveId]);
 								rightItems++;
 							}
 						}
-						if (leftItems == 0 || leftItems == size || rightItems == 0 || rightItems == size)
+						if (leftItems == 0 || leftItems == numPrims || rightItems == 0 || rightItems == numPrims)
 							continue;
 						float leftArea = left.area();
 						float rightArea = right.area();
 						if ((bboxArea - leftArea) < Epsilon || (bboxArea - rightArea) < Epsilon)
 							continue;
+						const float TTraverse = 0.125f;
+						const float TInters = 1.0f;
 						float cost = TTraverse + (costLeft * left.area() + costRight * right.area()) / bboxArea;
 						if (cost <= minCost) {
 							minCost = cost;
 							minCostPlane = plane;
-							minDimension = dimension;
+							minCostDim = dim;
 						}
 					}
 				}
-				if (minCostPlane == -1 || minCost > TTraverse + size * TInters) {
-					tree.addLeaf(begin, end, depth, bounds, tempIndices);
-					return;
-				}
+			}
+			if (minCostPlane == -1 || minCost > numPrims) {
+				tree.addLeaf(begin, end, depth, bounds, tempIndices);
+				return;
 			}
 			AABB left;
 			AABB right;
@@ -125,15 +269,15 @@ namespace PrimitiveLocators {
 			int leftEnd = begin;
 
 			for (int i = begin; i < rightStart && leftEnd != end && rightStart != begin; ++i) {
-				int primitiveID = tempIndices[i];
+				int primitiveId = tempIndices[i];
 				bool isLeft = false;
-				if (tree.boundsArray[primitiveID].min()[minDimension] <= minCostPlane) {
-					left.append(tree.boundsArray[primitiveID]);
+				if (tree.boundsArray[primitiveId].min()[minCostDim] <= minCostPlane) {
+					left.append(tree.boundsArray[primitiveId]);
 					isLeft = true;
 				}
 				bool isRight = false;
-				if (tree.boundsArray[primitiveID].max()[minDimension] >= minCostPlane) {
-					right.append(tree.boundsArray[primitiveID]);
+				if (tree.boundsArray[primitiveId].max()[minCostDim] >= minCostPlane) {
+					right.append(tree.boundsArray[primitiveId]);
 					isRight = true;
 				}
 				if (isLeft && !isRight) {
@@ -161,7 +305,7 @@ namespace PrimitiveLocators {
 			for (int i = 0; i < rightStart - begin; ++i) {
 				leftIndices[i] = tempIndices[begin + i];
 			}
-			// compiler keeps optimizing int nodeId = tree.nodes.size() away so put it explicitly
+			// compiler keeps optimizing int nodeId = tree.nodes.size() away and breaking this method so put it explicitly
 			tree.nodes[nodeId].firstChild = nodeId + 1;
 			build(0, rightStart - begin, depth - 1, left, nodeId + 1, leftIndices, tree);
 			tree.nodes[nodeId].secondChild = tree.nodes.size();
@@ -169,10 +313,17 @@ namespace PrimitiveLocators {
 		}
 	};
 
+	/// AABB tree for primitives with "AABB bbox()" method
 	template<class Primitive, class TreeBuilder>
-	class AABBTree : public Intersectable {
-		friend class SAHTreeBuilder<Primitive>;
-		friend class SplitEqualCountsTreeBuilder<Primitive>;
+	class AABBTree : public Base<Primitive> {
+		template<class Primitive, int minPrims, bool useMaxDir>
+		friend class MiddleTreeBuilder;
+		template<class Primitive, int minPrims>
+		friend class EqualCountsTreeBuilder;
+		template<class Primitive, int minPrims, bool useMaxDir, int bucketSize>
+		friend class BucketSAHTreeBuilder;
+		template<class U, int minPrims, bool useMaxDir>
+		friend class FullSAHTreeBuilder;
 	private:
 		struct Node {
 			enum Type : unsigned int {
@@ -201,11 +352,11 @@ namespace PrimitiveLocators {
 		//int build(int begin, int end, int depth, const AABB& bounds, std::vector<int>& tempIndices);
 	public:
 		template <class Iterator>
-		AABBTree(Iterator begin, Iterator end, std::function<Primitive*(Iterator&)> get, int maxDepth = -1, int maxPrimitiveInNode = 1);
+		AABBTree(Iterator begin, Iterator end, std::function<Primitive*(Iterator&)> get, int maxDepth = -1);
 		template <class Iterator>
-		AABBTree(Iterator begin, Iterator end, Primitive*(*get)(Iterator&), int maxDepth = -1, int maxPrimitiveInNode = 1);
+		AABBTree(Iterator begin, Iterator end, Primitive*(*get)(Iterator&), int maxDepth = -1);
 		template <class Iterator>
-		AABBTree(Iterator begin, Iterator end, int maxDepth = -1, int maxPrimitiveInNode = 1);
+		AABBTree(Iterator begin, Iterator end, int maxDepth = -1);
 		template<class Object>
 		std::vector<int> intersectedIndicies(const Object& object) const;
 		virtual bool intersect(const Ray& ray) const override;
@@ -228,32 +379,11 @@ namespace PrimitiveLocators {
 			nodes.emplace_back(Node::Type::Leaf, start, indices.size(), bounds);
 			return nodeId;
 		}
-		AABB centroidBounds;
+		AABB centroidBBox;
 		for (int i = begin; i < end; ++i)
-			centroidBounds.append(boundsArray[tempIndices[i]]);
-		/*if (splitType == SAH) {
-			int minDimension = 0;
-			float minPlane = 0;
-			float minCost = std::numeric_limits<double>;
-			for (int dimension = 0; dimension < 3; dimension++)
-			{
-			}
-		}
-		else if (splitType == SplitType::SimpleSAH) {
-
-		}
-		else if (splitType == SplitType::BucketSAH) {
-
-
-		}
-		else if (splitType == SplitType::EqualCount) {
-
-		}
-		else if (splitType == SplitType::Middle) {
-
-		}*/
+			centroidBBox.append(boundsArray[tempIndices[i]]);
 		int dimension = bounds.maxExtentDirection();
-		if (centroidBounds.max()[dimension] == centroidBounds.min()[dimension]) {
+		if (centroidBBox.max()[dimension] == centroidBBox.min()[dimension]) {
 			// add leaf
 			int start = indices.size();
 			for (int i = begin; i < end; ++i)
@@ -269,9 +399,9 @@ namespace PrimitiveLocators {
 		bool foundPlane = false;
 		float bboxArea = bounds.area();
 		for (int i = begin; i < end; ++i) {
-			int primitiveIDFirst = tempIndices[i];
-			float min = boundsArray[primitiveIDFirst].min()[dimension];
-			float max = boundsArray[primitiveIDFirst].max()[dimension];
+			int primitiveIdFirst = tempIndices[i];
+			float min = boundsArray[primitiveIdFirst].min()[dimension];
+			float max = boundsArray[primitiveIdFirst].max()[dimension];
 			for (float plane : { min, max}) {
 				int leftItems = 0;
 				int rightItems = 0;
@@ -280,15 +410,15 @@ namespace PrimitiveLocators {
 				AABB right;
 				float costRight = 0.0f;
 				for (int j = begin; j < end; ++j) {
-					int primitiveID = tempIndices[j];
-					if (boundsArray[primitiveID].min()[dimension] <= plane) {
+					int primitiveId = tempIndices[j];
+					if (boundsArray[primitiveId].min()[dimension] <= plane) {
 						costLeft += TInters;
-						left.append(boundsArray[primitiveID]);
+						left.append(boundsArray[primitiveId]);
 						leftItems++;
 					}
-					if (boundsArray[primitiveID].max()[dimension] >= plane) {
+					if (boundsArray[primitiveId].max()[dimension] >= plane) {
 						costRight += TInters;
-						right.append(boundsArray[primitiveID]);
+						right.append(boundsArray[primitiveId]);
 						rightItems++;
 					}
 				}
@@ -323,18 +453,18 @@ namespace PrimitiveLocators {
 		//TODO: check and write this part
 		// i think this should work fine, need to test it
 		for (int i = begin; i < rightStart && leftEnd != end && rightStart != begin; ++i) {
-			int primitiveID = tempIndices[i];
+			int primitiveId = tempIndices[i];
 			bool isLeft = false;
-			if (boundsArray[primitiveID].min()[dimension] <= minCostPlane) {
-				left.append(boundsArray[primitiveID]);
+			if (boundsArray[primitiveId].min()[dimension] <= minCostPlane) {
+				left.append(boundsArray[primitiveId]);
 				isLeft = true;
 #ifdef DEBUG
 				classified[i - begin] |= 1;
 #endif
 			}
 			bool isRight = false;
-			if (boundsArray[primitiveID].max()[dimension] >= minCostPlane) {
-				right.append(boundsArray[primitiveID]);
+			if (boundsArray[primitiveId].max()[dimension] >= minCostPlane) {
+				right.append(boundsArray[primitiveId]);
 				isRight = true;
 #ifdef DEBUG
 				classified[i - begin] |= 2;
@@ -382,9 +512,9 @@ namespace PrimitiveLocators {
 		return nodeId;
 	}
 #endif
-	template<class Primitive, class Builder>
+	template<class Primitive, class TreeBuilder>
 	template <class Iterator>
-	AABBTree<Primitive, Builder>::AABBTree(Iterator begin, Iterator end, std::function<Primitive*(Iterator&)> get, int maxDepth, int maxPrimitiveInNode) {
+	AABBTree<Primitive, TreeBuilder>::AABBTree(Iterator begin, Iterator end, std::function<Primitive*(Iterator&)> get, int maxDepth) {
 		int primitivesCount = std::distance(begin, end);
 		std::vector<int> tempIndices;
 		tempIndices.reserve(primitivesCount);
@@ -396,16 +526,16 @@ namespace PrimitiveLocators {
 			rootBounds.append(boundsArray.back());
 			tempIndices.push_back(tempIndices.size());
 		}
-		// from pbrt book
+		// heuristic from pbrt book
 		if (maxDepth <= 0)
 			maxDepth = std::round(8 + 1.3f * glm::log2(primitives.size()));
-		Builder::build(0, primitivesCount, maxDepth - 1, rootBounds, 0, tempIndices, *this);
+		TreeBuilder::build(0, primitivesCount, maxDepth - 1, rootBounds, 0, tempIndices, *this);
 		//build(0, primitivesCount, maxDepth - 1, rootBounds, std::numeric_limits<float>::max(), 0, tempIndices);
 	}
 
-	template<class Primitive, class Builder>
+	template<class Primitive, class TreeBuilder>
 	template <class Iterator>
-	AABBTree<Primitive, Builder>::AABBTree(Iterator begin, Iterator end, Primitive*(*get)(Iterator&), int maxDepth, int maxPrimitiveInNode) {
+	AABBTree<Primitive, TreeBuilder>::AABBTree(Iterator begin, Iterator end, Primitive*(*get)(Iterator&), int maxDepth) {
 		int primitivesCount = std::distance(begin, end);
 		primitives.reserve(primitivesCount);
 		boundsArray.reserve(primitivesCount);
@@ -421,12 +551,12 @@ namespace PrimitiveLocators {
 		if (maxDepth <= 0)
 			maxDepth = std::round(8 + 1.3f * glm::log2(primitives.size()));
 		//build(0, primitivesCount, maxDepth - 1, rootBounds, std::numeric_limits<float>::max(), 0, tempIndices);
-		Builder::build(0, primitivesCount, maxDepth - 1, rootBounds, 0, tempIndices, *this);
+		TreeBuilder::build(0, primitivesCount, maxDepth - 1, rootBounds, 0, tempIndices, *this);
 	}
 
-	template<class Primitive, class Builder>
+	template<class Primitive, class TreeBuilder>
 	template <class Iterator>
-	AABBTree<Primitive, Builder>::AABBTree(Iterator begin, Iterator end, int maxDepth, int maxPrimitiveInNode) {
+	AABBTree<Primitive, TreeBuilder>::AABBTree(Iterator begin, Iterator end, int maxDepth) {
 		int primitivesCount = std::distance(begin, end);
 		std::vector<int> tempIndices;
 		tempIndices.reserve(primitivesCount);
@@ -441,17 +571,17 @@ namespace PrimitiveLocators {
 		if (maxDepth <= 0)
 			maxDepth = std::round(8 + 1.3f * glm::log2(primitives.size()));
 		//build(0, primitivesCount, maxDepth - 1, rootBounds, std::numeric_limits<float>::max(), 0, tempIndices);
-		Builder::build(0, primitivesCount, maxDepth - 1, rootBounds, 0, tempIndices, *this);
+		TreeBuilder::build(0, primitivesCount, maxDepth - 1, rootBounds, 0, tempIndices, *this);
 	}
 
-	template<class Primitive, class Builder>
-	AABB AABBTree<Primitive, Builder>::bbox() const {
+	template<class Primitive, class TreeBuilder>
+	AABB AABBTree<Primitive, TreeBuilder>::bbox() const {
 		return rootBounds;
 	}
 
-	template<class Primitive, class Builder>
+	template<class Primitive, class TreeBuilder>
 	template<class Object>
-	std::vector<int> AABBTree<Primitive, Builder>::intersectedIndicies(const Object& object) const {
+	std::vector<int> AABBTree<Primitive, TreeBuilder>::intersectedIndicies(const Object& object) const {
 		std::vector<int> result;
 		if (nodes.empty())
 			return result;
@@ -475,8 +605,8 @@ namespace PrimitiveLocators {
 		return result;
 	}
 
-	template<class Primitive, class Builder>
-	bool AABBTree<Primitive, Builder>::intersect(const Ray& ray) const {
+	template<class Primitive, class TreeBuilder>
+	bool AABBTree<Primitive, TreeBuilder>::intersect(const Ray& ray) const {
 		if (nodes.empty())
 			return false;
 		std::stack<int> nodeStack;
@@ -498,8 +628,8 @@ namespace PrimitiveLocators {
 		}
 		return false;
 	}
-	template<class Primitive, class Builder>
-	bool AABBTree<Primitive, Builder>::intersect(Ray& ray, HitInfo& hitInfo) const {
+	template<class Primitive, class TreeBuilder>
+	bool AABBTree<Primitive, TreeBuilder>::intersect(Ray& ray, HitInfo& hitInfo) const {
 		if (nodes.empty())
 			return false;
 		bool result = false;
@@ -520,8 +650,8 @@ namespace PrimitiveLocators {
 		}
 		return result;
 	}
-	template<class Primitive, class Builder>
-	void AABBTree<Primitive, Builder>::print() const {
+	template<class Primitive, class TreeBuilder>
+	void AABBTree<Primitive, TreeBuilder>::print() const {
 		int index = 0;
 		for (auto primitive : primitives) {
 			AABB aabb = primitive->bbox();
@@ -546,8 +676,8 @@ namespace PrimitiveLocators {
 				aabb.max().x, aabb.max().y, aabb.max().z);
 		}
 	}
-	template<class Primitive, class Builder>
-	bool AABBTree<Primitive, Builder>::test() const {
+	template<class Primitive, class TreeBuilder>
+	bool AABBTree<Primitive, TreeBuilder>::test() const {
 		if (nodes.empty())
 			return true;
 		bool result = true;

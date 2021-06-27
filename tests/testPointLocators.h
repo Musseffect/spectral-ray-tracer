@@ -1,8 +1,11 @@
 #pragma once
-#include "Random.h"
-#include "PointLocators.h"
-#include "Timer.h"
-#include "common.h"
+#include <spectral-photon-mapping/Random.h>
+#include <spectral-photon-mapping/Accelerators/Point Locators/AABBTree.h>
+#include <spectral-photon-mapping/Accelerators/Point Locators/BruteForce.h>
+#include <spectral-photon-mapping/Accelerators/Point Locators/Grid.h>
+#include <spectral-photon-mapping/Accelerators/Point Locators/KdTree.h>
+#include <spectral-photon-mapping/Timer.h>
+#include <spectral-photon-mapping/common.h>
 #include <vector>
 
 void testPointLocators()

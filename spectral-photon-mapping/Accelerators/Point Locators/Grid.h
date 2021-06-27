@@ -17,19 +17,23 @@ namespace PointLocators {
 				return result;
 			vec3 cellSize = (accelerator->_bounds.max() - accelerator->_bounds.min()) / accelerator->size;
 			AABB primitiveBounds = primitive.bounds();
-			glm::ivec3 min = glm::max(glm::ivec3(0), glm::ivec3(glm::floor((primitiveBounds.min() - accelerator->_bounds._min) / cellSize)));
-			glm::ivec3 max = glm::min(glm::ivec3(size - 1), glm::ivec3(glm::floor((primitiveBounds.max() - accelerator->_bounds._min) / cellSize)));
+			glm::ivec3 min = glm::max(glm::ivec3(0), glm::ivec3(glm::floor((primitiveBounds.min() - accelerator->_bounds.min()) / cellSize)));
+			glm::ivec3 max = glm::min(glm::ivec3(accelerator->size - 1), glm::ivec3(glm::floor((primitiveBounds.max() - accelerator->_bounds.min()) / cellSize)));
 			for (int x = min.x; x <= max.x; x++)
 			{
 				for (int y = min.y; y <= max.y; y++)
 				{
 					for (int z = min.z; z <= max.z; z++)
 					{
-						if (!primitive.intersect(BBox3D(min + accelerator->_bounds.min(), max + accelerator->_bounds.max())))
+						const vec3 boxMin = vec3(float(x), float(y), float(z)) * cellSize;
+						const vec3 boxMax = vec3(float(x + 1), float(y + 1), float(z + 1)) * cellSize;
+						if (!primitive.intersect(BBox3D(boxMin + accelerator->_bounds.min(), boxMax + accelerator->_bounds.min())))
 							continue;
-						for (auto& pointPtr : current) {
-							if (primitive.intersect(*pointPtr))
-								result.push_back(index);
+						const auto& current = accelerator->indices[accelerator->index(x, y, z)];
+						for (auto& index : current) {
+							const Point& point = accelerator->points[index];
+							if (primitive.intersect(point))
+								result.push_back(&point);
 						}
 					}
 				}
@@ -39,17 +43,23 @@ namespace PointLocators {
 	};
 	template<class Point>
 	class HashGrid : public Base<Point, HashGridPointPrimitiveSearch> {
-		std::vector<Point*> points;
-		std::vector<std::vector<int>> indices;
+		struct listNode {
+			int next = -1;
+			int index = -1;
+			listNode(int next, int index) : next(next), index(index) {}
+		};
+		using Base<Point, HashGridPointPrimitiveSearch>::points;
+		std::vector<int> grid;
+		std::vector<listNode> nodes;
 		BBox3D _bounds;
-		int size;
+		glm::ivec3 size;
 		int index(int i, int j, int k) const;
 	public:
 		template<class Iterator>
-		HashGrid(Iterator begin, Iterator end, int gridSize);
+		HashGrid(Iterator begin, Iterator end, const glm::ivec3& gridSize);
 		template<class Iterator>
-		HashGrid(Iterator begin, Iterator end, Primitive*(*get)(Iterator&), int gridSize);
-		virtual std::vector<Point> pointsWithinRadius(const vec3& center, float radius) const override;
+		HashGrid(Iterator begin, Iterator end, Point*(*get)(Iterator&), const glm::ivec3& gridSize);
+		virtual std::vector<Point*> pointsWithinRadius(const vec3& center, float radius) const override;
 		virtual std::vector<int> indicesWithinRadius(const vec3& center, float radius) const override;
 		virtual const Point& pointAt(int index) const override;
 		bool isEmpty() const;
@@ -61,48 +71,52 @@ namespace PointLocators {
 	}
 	template<class Point>
 	template<class Iterator>
-	HashGrid<Point>::HashGrid(Iterator begin, Iterator end, int gridSize) : points(gridSize * gridSize * gridSize) {
-		int id = 0;
+	HashGrid<Point>::HashGrid(Iterator begin, Iterator end, const glm::ivec3& gridSize):size(gridSize), grid(gridSize.x * gridSize.y * gridSize.z, -1){
+		points.reserve(std::distance(begin, end));
 		for (Iterator it = begin; it != end; ++it) {
-			_bounds.append(it->coords());
-			++id;
+			_bounds.append(it->position());
+			points.append(&(*it));
 		}
-		size = gridSize;
-		id = 0;
+		vec3 diag = _bounds.size();
 		vec3 cellSize = _bounds.size() / size;
-		for (Iterator it = begin; it != end; ++it) {
-			glm::ivec3 coords = glm::min(glm::ivec3(glm::floor((it->position() - _bounds._min) / cellSize)), glm::ivec3(size - 1));
-			points[index(coords.x, coords.y, coords.z)].push_back(&(*it));
+		nodes.reserve(points.size());
+		for (int i = 0; i < points.size(); ++i) {
+			glm::ivec3 coords = glm::min(glm::ivec3(glm::floor((points[i]->position() - _bounds.min()) / cellSize)), glm::ivec3(size - 1));
+			int gridIndex = index(coords.x, coords.y, coords.z);
+			nodes.push_back(listNode(grid[gridIndex], i));
+			grid[gridIndex] = nodes.size() - 1;
 		}
 	}
 	template<class Point>
 	template<class Iterator>
-	HashGrid<Point>::HashGrid(Iterator begin, Iterator end, Primitive*(*get)(Iterator&), int gridSize) : points(gridSize * gridSize * gridSize) {
-		int id = 0;
+	HashGrid<Point>::HashGrid(Iterator begin, Iterator end, Point*(*get)(Iterator&), const glm::ivec3& gridSize) :size(gridSize), grid(gridSize.x * gridSize.y * gridSize.z, -1) {
+		points.reserve(std::distance(begin, end));
 		for (Iterator it = begin; it != end; ++it) {
-			_bounds.append(get(it)->coords());
-			++id;
+			_bounds.append(get(it)->position());
+			points.append(get(it));
 		}
-		size = gridSize;
-		id = 0;
+		vec3 diag = _bounds.size();
 		vec3 cellSize = _bounds.size() / size;
-		for (Iterator it = begin; it != end; ++it) {
-			glm::ivec3 coords = glm::min(glm::ivec3(glm::floor((get(it)->position() - _bounds._min) / cellSize)), glm::ivec3(size - 1));
-			points[index(coords.x, coords.y, coords.z)].push_back(get(it));
+		nodes.reserve(points.size());
+		for (int i = 0; i < points.size(); ++i) {
+			glm::ivec3 coords = glm::min(glm::ivec3(glm::floor((points[i]->position() - _bounds.min()) / cellSize)), glm::ivec3(size - 1));
+			int gridIndex = index(coords.x, coords.y, coords.z);
+			nodes.push_back(listNode(grid[gridIndex], i));
+			grid[gridIndex] = nodes.size() - 1;
 		}
 	}
 	template<class Point>
-	std::vector<Point> HashGrid<Point>::pointsWithinRadius(const vec3& center, float radius) const {
+	std::vector<Point*> HashGrid<Point>::pointsWithinRadius(const vec3& center, float radius) const {
 		if (isEmpty())
 			return {};
-		float sqrDist = bounds.outerSqrDistance(center);
+		float sqrDist = _bounds.outerSqrDistance(center);
 		float Epsilon = 0.01f;
 		float radiusSqr = radius * radius;
 		if (sqrDist > radiusSqr + Epsilon)
 			return {};
-		vec3 cellSize = (_bounds._max - _bounds._min) / size;
-		glm::ivec3 min = glm::max(glm::ivec3(0), glm::ivec3(glm::floor((center - vec3(radius + Epsilon) - bounds._min) / cellSize)));
-		glm::ivec3 max = glm::min(glm::ivec3(size - 1), glm::ivec3(glm::floor((center + vec3(radius + Epsilon) - bounds._min) / cellSize)));
+		vec3 cellSize = _bounds.size() / size;
+		glm::ivec3 min = glm::max(glm::ivec3(0), glm::ivec3(glm::floor((center - vec3(radius + Epsilon) - _bounds.min()) / cellSize)));
+		glm::ivec3 max = glm::min(glm::ivec3(size - 1), glm::ivec3(glm::floor((center + vec3(radius + Epsilon) - _bounds.min()) / cellSize)));
 		std::vector<Point> result;
 		for (int x = min.x; x <= max.x; x++)
 		{
@@ -110,23 +124,26 @@ namespace PointLocators {
 			{
 				for (int z = min.z; z <= max.z; z++)
 				{
-					const vec3 boxCenter = vec3(float(x) + 0.5f, float(y) + 0.5f, float(z) + 0.5f) * cellSize + bounds._min - center;
+					const vec3 boxCenter = vec3(float(x) + 0.5f, float(y) + 0.5f, float(z) + 0.5f) * cellSize + _bounds.min() - center;
 					if (BBox3D::outerSqrDistToBox(boxCenter, 0.5f * cellSize) > radiusSqr + Epsilon)
 						continue;
-					const auto& current = indices[index(x, y, z)];
+					auto current = grid[index(x, y, z)];
 					if (glm::length2(glm::max(glm::abs(boxCenter - vec3(cellSize)), glm::abs(boxCenter + vec3(cellSize)))) <= radiusSqr) {
 
-						for (auto& index : current) {
-							const Point& point = this->points[index];
+						while (current != -1) {
+							const auto& node = nodes[current];
+							const Point& point = this->points[node.index];
 							result.push_back(point);
+							current = node.next;
 						}
 						continue;
 					}
-
-					for (auto& index : current) {
-						const Point& point = this->points[index];
-						if (glm::length2(center - point.coords()) <= radiusSqr)
+					while (current != -1) {
+						const auto& node = nodes[current];
+						const Point* point = this->points[node.index];
+						if (glm::length2(center - point->position()) <= radiusSqr)
 							result.push_back(point);
+						current = node.next;
 					}
 				}
 			}
@@ -137,35 +154,40 @@ namespace PointLocators {
 	std::vector<int> HashGrid<Point>::indicesWithinRadius(const vec3& center, float radius) const {
 		if (isEmpty())
 			return;
-		float sqrDist = bounds.outerSqrDistance(center);
+		float sqrDist = _bounds.outerSqrDistance(center);
 		float Epsilon = 0.01f;
 		float radiusSqr = radius * radius;
 		if (sqrDist > radiusSqr + Epsilon)
 			return;
-		vec3 cellSize = (_bounds._max - _bounds._min) / size;
-		glm::ivec3 min = glm::max(glm::ivec3(0), glm::ivec3(glm::floor((center - vec3(radius + Epsilon) - bounds._min) / cellSize)));
-		glm::ivec3 max = glm::min(glm::ivec3(size - 1), glm::ivec3(glm::floor((center + vec3(radius + Epsilon) - bounds._min) / cellSize)));
+		std::vector<int> result;
+		vec3 cellSize = _bounds.size() / size;
+		glm::ivec3 min = glm::max(glm::ivec3(0), glm::ivec3(glm::floor((center - vec3(radius + Epsilon) - _bounds.min()) / cellSize)));
+		glm::ivec3 max = glm::min(glm::ivec3(size - 1), glm::ivec3(glm::floor((center + vec3(radius + Epsilon) - _bounds.min()) / cellSize)));
 		for (int x = min.x; x <= max.x; x++)
 		{
 			for (int y = min.y; y <= max.y; y++)
 			{
 				for (int z = min.z; z <= max.z; z++)
 				{
-					const vec3 boxCenter = vec3(float(x) + 0.5f, float(y) + 0.5f, float(z) + 0.5f) * cellSize + bounds._min - center;
+					const vec3 boxCenter = vec3(float(x) + 0.5f, float(y) + 0.5f, float(z) + 0.5f) * cellSize + _bounds.min() - center;
 					if (BBox3D::outerSqrDistToBox(boxCenter, 0.5f * cellSize) > radiusSqr + Epsilon)
 						continue;
-					const auto& current = indices[index(x, y, z)];
+					auto current = grid[index(x, y, z)];
 					if (glm::length2(glm::max(glm::abs(boxCenter - vec3(cellSize)), glm::abs(boxCenter + vec3(cellSize)))) <= radiusSqr) {
-
-						for (auto& index : current)
-							result.push_back(index);
+						while (current != -1) {
+							const auto& node = nodes[current];
+							result.push_back(node.index);
+							current = node.next;
+						}
 						continue;
 					}
 
 					for (auto& index : current) {
-						const Point& point = this->points[index];
-						if (glm::length2(center - point.coords()) <= radiusSqr)
-							result.push_back(index);
+						const auto& node = nodes[current];
+						const Point* point = this->points[node.index];
+						if (glm::length2(center - point->position()) <= radiusSqr)
+							result.push_back(node.index);
+						current = node.next;
 					}
 				}
 			}

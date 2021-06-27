@@ -21,8 +21,8 @@ public:
 	bool testVisibility(const Ray& ray) const;
 	//todo: add aabb tree or something like that
 	bool intersect(Ray ray, HitInfo& hitInfo) const;
-	template<class ...Params>
-	void buildAccelerator(Params...params);
+	template<class...Args>
+	void buildAccelerator(Args...args);
 	void print() const;
 };
 
@@ -122,8 +122,8 @@ bool Scene<RayTraceAccel>::intersect(Ray ray, HitInfo& hitInfo) const {
 }
 
 template<class RayTraceAccel>
-template<class...Params>
-void Scene<RayTraceAccel>::buildAccelerator(Params...params) {
+template<class...Args>
+void Scene<RayTraceAccel>::buildAccelerator(Args...args) {
 	std::vector<Intersectable*> objects;
 	objects.reserve(primitives.size() + lights.size());
 	for (auto primitive : primitives)
@@ -133,7 +133,7 @@ void Scene<RayTraceAccel>::buildAccelerator(Params...params) {
 			objects.push_back(light.get());
 	}
 	std::function<Intersectable*(typename std::vector<Intersectable*>::iterator&)> get = [](typename std::vector<Intersectable*>::iterator& it)->Intersectable* {return *it; };
-	accel = std::make_unique<RayTraceAccel>(objects.begin(), objects.end(), get, params...);
+	accel = std::make_unique<RayTraceAccel, Args...>(objects.begin(), objects.end(), get, args...);
 }
 
 template<class RayTraceAccel>

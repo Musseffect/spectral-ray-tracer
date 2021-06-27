@@ -1,10 +1,30 @@
 #include "Color.h"
 
+float integratProduct(const ColorSampler* const a, const ColorSampler* const b, float min, float max, int samples) {
+	assert(samples != 1);
+	float value = 0.0;
+	float aCur = a->sample(min);
+	float bCur = b->sample(min);
+	float dx = (max - min) / float(samples);
+	for (int i = 1; i < samples; ++i) {
+		float x = (max - min) * i / float(samples) + min;
+		float aNext = a->sample(x);
+		float bNext = b->sample(x);
+		float da = aNext - aCur;
+		float db = bNext - bCur;
+		value += aCur * bCur + (aCur * db + bCur * da) * 0.5f + da * db / 3.0f;
+		aCur = aNext;
+		bCur = bNext;
+	}
+	return value * dx;
+}
+
+
 float blackBodyRadiance(float wavelength, float temperature) {
 	const float c = 299792458.0f;
-	const float h = 6.62606957e-34;
-	const float kb = 1.3806488e-23;
-	float l = wavelength * 1e-9;
+	const float h = 6.62606957e-34f;
+	const float kb = 1.3806488e-23f;
+	float l = wavelength * 1e-9f;
 	float l5 = l * l * l * l * l;
 	return (2.0f * h * c * c) / (l5 * (std::exp(h * c / (l * kb * temperature)) - 1.0f));
 }
@@ -40,7 +60,7 @@ float BlackBodySPD::sample(float wavelength) const {
 }
 
 float BlackBodySPDNormalized::sample(float wavelength) const {
-	return BlackBodySPD::sample(wavelength) / BlackBodySPD::sample(2.8977721e6 / temperature);
+	return BlackBodySPD::sample(wavelength) / BlackBodySPD::sample(2.8977721e6f / temperature);
 }
 
 float ColorSampler::integral(float min, float max, int samples) const  {

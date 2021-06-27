@@ -5,6 +5,7 @@
 
 
 namespace PrimitiveLocators {
+	static const float Epsilon = 0.000001f;
 	class IPrimitive: public Intersectable {
 	public:
 		virtual vec3 position() const = 0;
@@ -14,12 +15,12 @@ namespace PrimitiveLocators {
 	};
 	template<class Primitive>
 	class Base : public Intersectable {
-		Base();
 	protected:
-		std::vector<Primitive*> _primitives;
+		Base() = default;
+		std::vector<Primitive*> primitives;
 	public:
 		bool isEmpty() const {
-			return _primitives.size();
+			return primitives.size();
 		}
 	};
 }

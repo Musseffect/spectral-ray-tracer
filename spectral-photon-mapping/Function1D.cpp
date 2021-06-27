@@ -15,7 +15,7 @@ void GridFunction1D::scale(float scaleFactor) {
 float GridFunction1D::sample(float x) const {
 	assert(values.size() > 1);
 	float fx = (x - min) * (values.size() - 1) / (max - min);
-	int index = glm::floor(fx);
+	int index = static_cast<int>(glm::floor(fx));
 	if (index < 0)
 		return values.front();
 	if (index >= values.size() - 1)

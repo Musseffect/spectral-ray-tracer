@@ -14,9 +14,11 @@ public:
 	static float uniformSpherePdf();
 	static vec3 cosWeightedHemisphere(vec3 dir);
 	static vec3 cosWeightedHemisphere(vec3 dir, float& pdf);
-	static vec3 uniformTriangle(const vec3& a, const vec3& b, const vec3& c);
-	static float uniformTrianglePdf(const vec3& a, const vec3& b, const vec3& c);
-	static vec3 uniformTriangle(const vec3& a, const vec3& b, const vec3& c, float& pdf);
+	static vec3 uniformTriangle(const vec3& p0, const vec3& p1, const vec3& p2);
+	static float uniformTrianglePdf(const vec3& p0, const vec3& p1, const vec3& p2);
+	static vec3 uniformTriangle(const vec3& p0, const vec3& p1, const vec3& p2, float& pdf);
 	static vec2 uniformExponential2D();
 	static vec2 uniformExponential2D(float m, float sigma);
+	// http://vcg.isti.cnr.it/jgt/tetra.htm
+	static vec3 uniformTetrahedron(const vec3& p0, const vec3& p1, const vec3& p2, const vec3& p3);
 };

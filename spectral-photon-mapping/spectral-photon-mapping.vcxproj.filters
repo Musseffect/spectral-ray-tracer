@@ -16,9 +16,6 @@
     <Filter Include="Исходные файлы\Utils">
       <UniqueIdentifier>{71e282a7-c5ca-4abd-9209-7055e4820b77}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Исходные файлы\Tests">
-      <UniqueIdentifier>{13a4e9ae-05ba-4268-ad3a-6b3b157b3b67}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Исходные файлы\Core">
       <UniqueIdentifier>{ae29a54d-a2ff-45bd-921e-2a6d97e4662f}</UniqueIdentifier>
     </Filter>
@@ -224,9 +221,6 @@
     <ClInclude Include="Image.h">
       <Filter>Исходные файлы\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="testPointLocators.h">
-      <Filter>Исходные файлы\Tests</Filter>
-    </ClInclude>
     <ClInclude Include="SPPM.h">
       <Filter>Исходные файлы\Tracers</Filter>
     </ClInclude>
@@ -295,9 +289,6 @@
     </ClInclude>
     <ClInclude Include="Accelerators\Primitive Locators\KdTree.h">
       <Filter>Исходные файлы\Core\PrimitiveLocators</Filter>
-    </ClInclude>
-    <ClInclude Include="testAccelerators.h">
-      <Filter>Исходные файлы\Tests</Filter>
     </ClInclude>
     <ClInclude Include="BSphere3D.h">
       <Filter>Исходные файлы\Core</Filter>

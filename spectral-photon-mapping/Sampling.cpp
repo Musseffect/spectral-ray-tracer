@@ -92,3 +92,26 @@ vec2 Sampling::uniformExponential2D(float m, float sigma) {
 	r.x = r.x * glm::two_pi<float>();
 	return vec2(glm::cos(r.x), glm::sin(r.x)) * glm::sqrt(-2.0 * glm::log(r.y)) * sigma + m;
 }
+
+
+vec3 Sampling::uniformTetrahedron(const vec3& p0, const vec3& p1, const vec3& p2, const vec3& p3) {
+	float s = Random::random();
+	float t = Random::random();
+	float u = Random::random();
+	if (s + t > 1.0f) {
+		s = 1.0f - s;
+		t = 1.0f - t;
+	}
+	if (t + u > 1.0) {
+		float tmp = u;
+		u = 1.0f - s - t;
+		t = 1.0f - tmp;
+	}
+	else if (s + t + u > 1.0f) {
+		float tmp = u;
+		u = s + t + u - 1.0f;
+		s = 1.0f - t - tmp;
+	}
+	float a = 1.0f - s - t - u;
+	return p0 * a + p1 * s + p2 * t + p3 * u;
+}

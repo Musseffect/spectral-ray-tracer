@@ -1,12 +1,13 @@
 #pragma once
 #include "Base.h"
+#include <functional>
 
 namespace PrimitiveLocators {
 
 	template<class Primitive>
-	class BruteForce : public Intersectable {
-		std::vector<Primitive*> primitives;
+	class BruteForce : public Base<Primitive> {
 		AABB bounds;
+		using Base<Primitive>::primitives;
 	public:
 		template <class Iterator>
 		BruteForce(Iterator begin, Iterator end, std::function<Primitive*(Iterator&)> get);

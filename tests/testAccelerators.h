@@ -1,13 +1,13 @@
 #pragma once
-#include "common.h"
-#include "BBox3D.h"
-#include "Timer.h"
-#include "Random.h"
-#include "Sampling.h"
-#include "./Accelerators/Primitive Locators/KdTree.h"
-#include "./Accelerators/Primitive Locators/AABBTree.h"
-#include "./Accelerators/Primitive Locators/Grid.h"
-#include "./Accelerators/Primitive Locators/BruteForce.h"
+#include <spectral-photon-mapping/common.h>
+#include <spectral-photon-mapping/BBox3D.h>
+#include <spectral-photon-mapping/Timer.h>
+#include <spectral-photon-mapping/Random.h>
+#include <spectral-photon-mapping/Sampling.h>
+#include <spectral-photon-mapping/Accelerators/Primitive Locators/KdTree.h>
+#include <spectral-photon-mapping/Accelerators/Primitive Locators/AABBTree.h>
+#include <spectral-photon-mapping/Accelerators/Primitive Locators/Grid.h>
+#include <spectral-photon-mapping/Accelerators/Primitive Locators/BruteForce.h>
 
 struct StatCounter {
 	double min;

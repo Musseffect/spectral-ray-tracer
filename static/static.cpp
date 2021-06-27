@@ -1,25 +1,30 @@
-#if 0
-#include <windows.h>
+﻿#include <windows.h>
+#include "scenes.h"
 #undef min
 #undef max
-#include "common.h"
-#include "SPPM.h"
-#include "Debug.h"
-#include "./Accelerators/Point Locators/KdTree.h"
-#include "Camera.h"
-#include "Timer.h"
-#include "Scenes.h"
-#include "./Accelerators/Primitive Locators/KdTree.h"
-#include "./Accelerators/Primitive Locators/AABBTree.h"
-#include "./Accelerators/Primitive Locators/Grid.h"
-#include "./Accelerators/Primitive Locators/BruteForce.h"
+#include <spectral-photon-mapping\common.h>
+#include <spectral-photon-mapping\Image.h>
+#include <spectral-photon-mapping\Color.h>
+#include <spectral-photon-mapping\Timer.h>
+#include <spectral-photon-mapping\Progress.h>
+#include <spectral-photon-mapping\SPPM.h>
+#include <spectral-photon-mapping\Debug.h>
+#include <spectral-photon-mapping\Camera.h>
+#include <spectral-photon-mapping\Accelerators\Primitive Locators\KdTree.h>
+#include <spectral-photon-mapping\Accelerators\Primitive Locators\AABBTree.h>
+#include <spectral-photon-mapping\Accelerators\Primitive Locators\Grid.h>
+#include <spectral-photon-mapping\Accelerators\Primitive Locators\BruteForce.h>
+#include <spectral-photon-mapping\Accelerators\Point Locators\KdTree.h>
+#include <spectral-photon-mapping\Accelerators\Point Locators\AABBTree.h>
+#include <spectral-photon-mapping\Accelerators\Point Locators\Grid.h>
+#include <spectral-photon-mapping\Accelerators\Point Locators\BruteForce.h>
+
 
 #include <stdio.h>
 #include <fstream>
 #include <algorithm>
 #include <time.h>
 #pragma comment(lib, "winmm.lib")
-
 
 void saveImagePPM(const char* filename, const Image<rgb>& image) {
 	std::ofstream file;
@@ -60,94 +65,75 @@ std::string formatFilename() {
 	return "./Out/" + std::string(name);
 }
 
-void genStats(int samples, std::function<float()> random) {
-	std::vector<float> values;
-	values.reserve(samples);
-	for (int i = 0; i < samples; ++i) {
-		float value = random();
-		values.push_back(value);
-	}
-	std::sort(values.begin(), values.end(), std::less<float>());
-	float largestGap = 0.0f;
-	float smallestGap = std::numeric_limits<float>::max();
-	float averageGap = 0.0f;
-	for (int i = 0; i < samples - 1; ++i){
-		float gap = std::abs(values[i + 1] - values[i]);
-		largestGap = std::max(largestGap, gap);
-		smallestGap = std::min(smallestGap, gap);
-		averageGap += gap;
-	}
-	averageGap /= samples - 1;
-	float disrepancy = 1.0f / samples;
-	float deviation = 0.0f;
-	for (int i = 0; i < samples; ++i) {
-		if (i < samples - 1)
-			deviation += std::pow(std::abs(values[i + 1] - values[i]) - averageGap, 2.0f);
-		for (int j = i + 1; j < samples; ++j)
-			disrepancy = std::max(disrepancy, std::abs(float(j + 1 - i) / samples - std::abs(values[j] - values[i])));
-	}
-	deviation *= 1000000.0f;
-	deviation /= samples - 2;
-	printf("average gap: %f\n", averageGap);
-	printf("1 over n: %f\n\n", 1.0f / samples);
-	printf("deviation: %f\n", deviation);
-	printf("disrepancy: %f\n\n", disrepancy);
-	printf("max gap: %f\n", largestGap);
-	printf("min gap: %f\n\n", smallestGap);
-}
 #define USE_AABBTREE 0
 #define USE_GRID 1
 #define USE_KDTREE 2
 #define USE_BRUTEFORCE 3
 #define USE_SCENE_ACCEL USE_BRUTEFORCE
 #if USE_SCENE_ACCEL == USE_AABBTREE
-#define BACKWARD_TYPE "AABBTree"
+#define SCENE_ACCEL_TYPE "AABBTree"
 #define PARAMETERS -1
 using PrimitiveAccelerator = PrimitiveLocators::AABBTree<Intersectable>;
 #elif USE_SCENE_ACCEL == USE_GRID
-#define BACKWARD_TYPE "Grid"
+#define SCENE_ACCEL_TYPE "Grid"
 using PrimitiveAccelerator = PrimitiveLocators::Grid<Intersectable>;
 #elif USE_SCENE_ACCEL == USE_KDTREE
-#define BACKWARD_TYPE "KdTree"
+#define SCENE_ACCEL_TYPE "KdTree"
 using PrimitiveAccelerator = PrimitiveLocators::KdTree<Intersectable>;
 #elif USE_SCENE_ACCEL == USE_BRUTEFORCE
-#define BACKWARD_TYPE "BruteForce"
+#define SCENE_ACCEL_TYPE "BruteForce"
 #define PARAMETERS
 using PrimitiveAccelerator = PrimitiveLocators::BruteForce<Intersectable>;
 #else
-static_asset("are u ohuely tam?", false);
+static_asset("Unknown primitive accelerator", false);
 #endif
 
+
 using VisPoint = Spectral::SPPM::VisibilityPoint;
-#define VISIBILITY_ACCEL USE_BRUTEFORCE
-#if VISIBILITY_ACCEL == USE_AABBTREE
+#define VIS_ACCEL USE_BRUTEFORCE
+#if VIS_ACCEL == USE_AABBTREE
 using Builder = PrimitiveLocators::SplitEqualCountsTreeBuilder<VisPoint>;
-using VisPointSearch = PrimitiveLocators::AABBTree<VisPoint, Builder>;
-#define FORWARD_TYPE "AABBTree"
-#define VISIBILITY_PARAMS , 10
-#elif VISIBILITY_ACCEL == USE_GRID
-using VisPointSearch = PrimitiveLocators::Grid<VisPoint>;
+using VisPointAccel = PrimitiveLocators::AABBTree<VisPoint>;
+#define VIS_ACCEL_TYPE "AABBTree"
+#define VIS_ACCEL_PARAMS , 10
+#elif VIS_ACCEL == USE_GRID
+using VisPointAccel = PrimitiveLocators::Grid<VisPoint>;
 #define FORWARD_TYPE "Grid"
-#define VISIBILITY_PARAMS glm::ivec3(100)
-#elif VISIBILITY_ACCEL == USE_KDTREE
-using VisPointSearch = PrimitiveLocators::KdTree<VisPoint>;
-#define FORWARD_TYPE "KdTree"
-#elif VISIBILITY_ACCEL == USE_BRUTEFORCE
-using VisPointSearch = PrimitiveLocators::BruteForce<VisPoint>;
+#define VIS_ACCEL_PARAMS glm::ivec3(100)
+#elif VIS_ACCEL == USE_KDTREE
+using VisPointAccel = PrimitiveLocators::KdTree<VisPoint>;
+#define VIS_ACCEL_TYPE "KdTree"
+#elif VIS_ACCEL == USE_BRUTEFORCE
+using VisPointAccel = PrimitiveLocators::BruteForce<VisPoint>;
 #define FORWARD_TYPE "BruteForce"
-#define VISIBILITY_PARAMS
+#define VIS_ACCEL_PARAMS
 #else
 static_assert("Unknown macro", false);
 #endif
 
-//#define RENDER_FORWARD
+
+
+void renderCornellBox();
+void renderPrismScene();
+
+
+
+int main()
+{
+	renderCornellBox();
+	//renderPrismScene();
+	PlaySound(TEXT("SystemStart"), NULL, SND_ALIAS);
+	getchar();
+	return 0;
+}
+
 void renderCornellBox() {
-	// create scene
-	spScene<PrimitiveAccelerator> scene = createCornwellBox<PrimitiveAccelerator>();
+	auto scene = createCornwellBox<PrimitiveAccelerator>();
 	scene->buildAccelerator(PARAMETERS);
-	//scene->print();
+
 	Spectral::SPPM::Tracer<PrimitiveAccelerator> sppmTracer;
 	Debug::Tracer<PrimitiveAccelerator> debugTracer;
+
 	// setup settings
 	Spectral::SPPM::Settings settings;
 	settings.threads = 8;
@@ -160,10 +146,10 @@ void renderCornellBox() {
 	const int width = 256;
 	const int height = 256;
 	std::unique_ptr<Progress> progress = std::make_unique<ConsoleProgress>();
-	std::shared_ptr<Camera> camera = std::make_unique<Pinhole>(glm::radians(39.3076f)/2.0f, 1.0f, 0.0f,
+	std::shared_ptr<Camera> camera = std::make_unique<Pinhole>(glm::radians(39.3076f) / 2.0f, 1.0f, 0.0f,
 		Affine::lookAt(vec3(278.0f, 273.0f, -800.0f), vec3(278.0f, 273.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f)).inverse(),
 		height / float(width)
-	);
+		);
 	// Focal length  0.035
 	// Width, height 0.025x0.025
 	//2.0*atan(sensor_width / (2.0*focal_length))
@@ -181,11 +167,13 @@ void renderCornellBox() {
 	//Image<rgb> image = debugTracer.renderDiffuse(width, height, 20);
 	//Image<rgb> image = debugTracer.renderObjectColor(width, height, 20);
 	Image<rgb> image = sppmTracer.renderBackward<PointLocators::KdTree<Spectral::SPPM::SpectralPhoton>>(width, height, progress);
-	printf("\nTime for backward SPPM tracing (scene accel: %s): %f\n", BACKWARD_TYPE, timer.elapsed());
+	printf("\nTime for backward SPPM tracing (scene accel: %s): %f\n", SCENE_ACCEL_TYPE, timer.elapsed());
 #endif
 	std::string filename = formatFilename() + ".ppm";
 	saveImagePPM(filename.c_str(), image);
+
 }
+
 
 void renderPrismScene() {
 	std::shared_ptr<Scene<PrimitiveAccelerator>> scene = createPrismScene<PrimitiveAccelerator>();
@@ -204,7 +192,7 @@ void renderPrismScene() {
 	const int width = 256;
 	const int height = 256;
 	std::unique_ptr<Progress> progress = std::make_unique<ConsoleProgress>();
-//#define TOP_CAMERA
+	//#define TOP_CAMERA
 #ifdef TOP_CAMERA
 	std::shared_ptr<Camera> camera = std::make_unique<Pinhole>(glm::radians(79.3076f) / 2.0f, 1.0f, 0.0f,
 		Affine::lookAt(vec3(0.0f, 43.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f)).inverse(),
@@ -248,14 +236,6 @@ void renderPrismScene() {
 	saveImagePPM(filename.c_str(), image);
 }
 
-int main() {
-	renderCornellBox();
-	//renderPrismScene();
-	//runTestPrimitiveResults();
-	//runTestPrimitiveAccelerators();
-	PlaySound(TEXT("SystemStart"), NULL, SND_ALIAS);
-	getchar();
-	return 0;
-}
 
-#endif
+
+
