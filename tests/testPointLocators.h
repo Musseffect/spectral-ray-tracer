@@ -186,12 +186,12 @@ void testPointLocatorsPerformance(int pointCount) {
 	}
 	aabbSearchTime += timer.elapsedAndRestart();
 	printf("Point count: %d\n", pointCount);
-	printf("Kd tree creation %f\n", float(kdTime));
-	printf("Brute force creation %f\n", float(bfTime));
-	printf("Hash grid creation %f\n", float(gridTime));
-	printf("AABB tree creation %f\n\n", float(aabbTime));
-	printf("Kd tree search time %f\n", float(kdSearchTime));
-	printf("Brute force search time %f\n", float(bfSearchTime));
-	printf("Hash grid search time %f\n", float(gridSearchTime));
-	printf("AABB tree search time %f\n", float(aabbSearchTime));
+	printf("Kd tree creation %f\n", static_cast<float>(kdTime));
+	printf("Brute force creation %f\n", static_cast<float>(bfTime));
+	printf("Hash grid creation %f\n", static_cast<float>(gridTime));
+	printf("AABB tree creation %f\n\n", static_cast<float>(aabbTime));
+	printf("Kd tree search time %f\n", static_cast<float>(kdSearchTime));
+	printf("Brute force search time %f\n", static_cast<float>(bfSearchTime));
+	printf("Hash grid search time %f\n", static_cast<float>(gridSearchTime));
+	printf("AABB tree search time %f\n", static_cast<float>(aabbSearchTime));
 }

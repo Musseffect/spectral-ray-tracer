@@ -25,8 +25,8 @@ namespace PointLocators {
 				{
 					for (int z = min.z; z <= max.z; z++)
 					{
-						const vec3 boxMin = vec3(float(x), float(y), float(z)) * cellSize;
-						const vec3 boxMax = vec3(float(x + 1), float(y + 1), float(z + 1)) * cellSize;
+						const vec3 boxMin = vec3(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)) * cellSize;
+						const vec3 boxMax = vec3(static_cast<float>(x + 1), static_cast<float>(y + 1), static_cast<float>(z + 1)) * cellSize;
 						if (!primitive.intersect(BBox3D(boxMin + accelerator->_bounds.min(), boxMax + accelerator->_bounds.min())))
 							continue;
 						const auto& current = accelerator->indices[accelerator->index(x, y, z)];
@@ -124,7 +124,7 @@ namespace PointLocators {
 			{
 				for (int z = min.z; z <= max.z; z++)
 				{
-					const vec3 boxCenter = vec3(float(x) + 0.5f, float(y) + 0.5f, float(z) + 0.5f) * cellSize + _bounds.min() - center;
+					const vec3 boxCenter = vec3(static_cast<float>(x) + 0.5f, static_cast<float>(y) + 0.5f, static_cast<float>(z) + 0.5f) * cellSize + _bounds.min() - center;
 					if (BBox3D::outerSqrDistToBox(boxCenter, 0.5f * cellSize) > radiusSqr + Epsilon)
 						continue;
 					auto current = grid[index(x, y, z)];
@@ -169,7 +169,7 @@ namespace PointLocators {
 			{
 				for (int z = min.z; z <= max.z; z++)
 				{
-					const vec3 boxCenter = vec3(float(x) + 0.5f, float(y) + 0.5f, float(z) + 0.5f) * cellSize + _bounds.min() - center;
+					const vec3 boxCenter = vec3(static_cast<float>(x) + 0.5f, static_cast<float>(y) + 0.5f, static_cast<float>(z) + 0.5f) * cellSize + _bounds.min() - center;
 					if (BBox3D::outerSqrDistToBox(boxCenter, 0.5f * cellSize) > radiusSqr + Epsilon)
 						continue;
 					auto current = grid[index(x, y, z)];

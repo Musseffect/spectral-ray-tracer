@@ -29,9 +29,9 @@ mat4 Transform::toMat4() const {
 }
 
 Transform interpolate(const Transform& a, const Transform& b, float t) {
-	return Transform(glm::lerp(a.translation, b.translation, t),
+	return Transform(glm::mix(a.translation, b.translation, t),
 		glm::slerp(a.rotation, b.rotation, t),
-		glm::lerp(a.scale, b.scale, t));
+		glm::mix(a.scale, b.scale, t));
 }
 
 
@@ -102,7 +102,7 @@ BBox3D Affine::transform(const BBox3D& bbox) const {
 Affine interpolate(const Affine& a, const Affine& b, float t) {
 	mat4 result;
 	for (int i = 0; i < 4; i++) {
-		result[i] = glm::lerp(a._direct[i], b._direct[i], t);
+		result[i] = glm::mix(a._direct[i], b._direct[i], t);
 	}
 	return result;
 }

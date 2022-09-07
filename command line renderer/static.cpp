@@ -37,7 +37,7 @@ void saveImagePPM(const char* filename, const Image<rgb>& image) {
 		for (int i = 0; i < image.width(); i++) {
 			// flip y direction
 			vec3 color = image(i, image.height() - j - 1);
-			color = glm::pow(color, vec3(1.0f / 2.2f));
+			color = sRGB::fromLinear(color);
 			int r = glm::clamp<int>(int(255.0f * color.r + 0.5f), 0, 255);
 			int g = glm::clamp<int>(int(255.0f * color.g + 0.5f), 0, 255);
 			int b = glm::clamp<int>(int(255.0f * color.b + 0.5f), 0, 255);
@@ -148,7 +148,7 @@ void renderCornellBox() {
 	std::unique_ptr<Progress> progress = std::make_unique<ConsoleProgress>();
 	std::shared_ptr<Camera> camera = std::make_unique<Pinhole>(glm::radians(39.3076f) / 2.0f, 1.0f, 0.0f,
 		Affine::lookAt(vec3(278.0f, 273.0f, -800.0f), vec3(278.0f, 273.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f)).inverse(),
-		height / float(width)
+		height / static_cast<float>(width)
 		);
 	// Focal length  0.035
 	// Width, height 0.025x0.025
@@ -196,20 +196,20 @@ void renderPrismScene() {
 #ifdef TOP_CAMERA
 	std::shared_ptr<Camera> camera = std::make_unique<Pinhole>(glm::radians(79.3076f) / 2.0f, 1.0f, 0.0f,
 		Affine::lookAt(vec3(0.0f, 43.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f)).inverse(),
-		height / float(width)
+		height / static_cast<float>(width)
 		);
 	/*std::shared_ptr<Camera> camera = std::make_unique<OrthoProjectionCamera>(20.0f, 1.0f, 0.0f,
 		Affine::lookAt(vec3(0.0f, 10.0f, -20.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f)).inverse(),
-		height / float(width)
+		height / static_cast<float>(width)
 		);*/
 #else
 	/*std::shared_ptr<Camera> camera = std::make_unique<Pinhole>(glm::radians(35.0f) / 2.0f, 1.0f, 0.0f,
 		Affine::lookAt(vec3(28.0f, 43.0f, -100.0f), vec3(0.0f, 7.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f)).inverse(),
-		height / float(width)
+		height / static_cast<float>(width)
 		);*/
 	std::shared_ptr<Camera> camera = std::make_unique<Pinhole>(glm::radians(55.0f) / 2.0f, 1.0f, 0.0f,
 		Affine::lookAt(vec3(0.0f, 43.0f, 80.0f), vec3(0.0f, 7.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f)).inverse(),
-		height / float(width)
+		height / static_cast<float>(width)
 		);
 #endif
 	sppmTracer.setScene(scene);

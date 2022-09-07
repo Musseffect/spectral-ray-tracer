@@ -1,17 +1,27 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.1321
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spectral-photon-mapping", "spectral-photon-mapping\spectral-photon-mapping.vcxproj", "{842FED16-3939-4BFB-8987-5E2F9F2B85E3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "benchmark", "tests\tests.vcxproj", "{9B123CBA-7560-407C-A880-20F1379AF014}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "static", "static\static.vcxproj", "{4F5EC781-8B57-4E2D-AF44-C053D656AE9E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "command line renderer", "command line renderer\command line renderer.vcxproj", "{4F5EC781-8B57-4E2D-AF44-C053D656AE9E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1 Apps", "1 Apps", "{B8D80545-D4CD-4C32-BB79-A1EBBC1861E4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2 Libs", "2 Libs", "{BB4CBB2B-8066-4C88-A26B-FDD927C69892}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3 Utils", "3 Utils", "{A811B3FA-6549-43E1-BB3C-32194C845832}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Colorimetry", "Colorimetry", "{52A61D50-17A0-4A20-A65C-878BA7A7C137}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "2d-ray-tracing", "2d-ray-tracing\2d-ray-tracing.vcxproj", "{EF2931B1-5279-4726-9609-BF80F6BD6518}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common utils", "Common utils", "{47E0BEFC-FFDD-46F2-BAB2-22A4BD3B7D4C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Physics (move to external repo)", "Physics (move to external repo)", "{5ECFB66B-103A-4EAF-A34F-E5B2B9B7899F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +55,14 @@ Global
 		{4F5EC781-8B57-4E2D-AF44-C053D656AE9E}.Release|x64.Build.0 = Release|x64
 		{4F5EC781-8B57-4E2D-AF44-C053D656AE9E}.Release|x86.ActiveCfg = Release|Win32
 		{4F5EC781-8B57-4E2D-AF44-C053D656AE9E}.Release|x86.Build.0 = Release|Win32
+		{EF2931B1-5279-4726-9609-BF80F6BD6518}.Debug|x64.ActiveCfg = Debug|x64
+		{EF2931B1-5279-4726-9609-BF80F6BD6518}.Debug|x64.Build.0 = Debug|x64
+		{EF2931B1-5279-4726-9609-BF80F6BD6518}.Debug|x86.ActiveCfg = Debug|Win32
+		{EF2931B1-5279-4726-9609-BF80F6BD6518}.Debug|x86.Build.0 = Debug|Win32
+		{EF2931B1-5279-4726-9609-BF80F6BD6518}.Release|x64.ActiveCfg = Release|x64
+		{EF2931B1-5279-4726-9609-BF80F6BD6518}.Release|x64.Build.0 = Release|x64
+		{EF2931B1-5279-4726-9609-BF80F6BD6518}.Release|x86.ActiveCfg = Release|Win32
+		{EF2931B1-5279-4726-9609-BF80F6BD6518}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -53,6 +71,10 @@ Global
 		{842FED16-3939-4BFB-8987-5E2F9F2B85E3} = {BB4CBB2B-8066-4C88-A26B-FDD927C69892}
 		{9B123CBA-7560-407C-A880-20F1379AF014} = {B8D80545-D4CD-4C32-BB79-A1EBBC1861E4}
 		{4F5EC781-8B57-4E2D-AF44-C053D656AE9E} = {B8D80545-D4CD-4C32-BB79-A1EBBC1861E4}
+		{52A61D50-17A0-4A20-A65C-878BA7A7C137} = {A811B3FA-6549-43E1-BB3C-32194C845832}
+		{EF2931B1-5279-4726-9609-BF80F6BD6518} = {BB4CBB2B-8066-4C88-A26B-FDD927C69892}
+		{47E0BEFC-FFDD-46F2-BAB2-22A4BD3B7D4C} = {A811B3FA-6549-43E1-BB3C-32194C845832}
+		{5ECFB66B-103A-4EAF-A34F-E5B2B9B7899F} = {A811B3FA-6549-43E1-BB3C-32194C845832}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DAD6AF13-8D8C-40A7-A2F4-573CD1F157AE}

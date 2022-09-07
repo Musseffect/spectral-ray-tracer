@@ -13,6 +13,10 @@ cornell box 256x256 100000 300 iteration Grid
 cornell box 256x256 100000 300 iteration KdTree
 
 todo:
+
+Color spectrums and SRGB values
+
+
 Forward PT
 Backward PT
 Bidirectional PT

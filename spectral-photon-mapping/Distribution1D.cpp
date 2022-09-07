@@ -3,37 +3,39 @@
 
 Distribution1D::Distribution1D(std::initializer_list<float> initializer) {
 	integral = 0.0f;
-	cdf.push_back(0.0f);
+	m_cdf.push_back(0.0f);
 	for (auto value : initializer) {
-		values.push_back(value);
-		cdf.push_back(integral = integral + value);
+		m_values.push_back(value);
+		m_cdf.push_back(integral = integral + value);
 	}
-	cdf.back() = 1.0f;
-	for (auto& value : cdf)
+	m_cdf.back() = 1.0f;
+	for (auto& value : m_cdf)
 		value /= integral;
 }
 float Distribution1D::sampleContinuous(float value, float& pdf) const {
+	assert(m_values.size() > 1);
 	//todo: rewrite
-	int l = 0;
-	int r = values.size() - 1;
+	size_t l = 0;
+	size_t r = m_values.size() - 1;
 	while (l != r) {
 		int i = (r + l) / 2;
-		if (cdf[i + 1] > value)
+		if (m_cdf[i + 1] > value)
 			r = i;
 		else
 			l = i + 1;
 	}
-	float delta = value - cdf[l - 1];
-	delta = delta / (cdf[l] - cdf[l - 1]);
-	pdf = values[l] / integral;
-	return (l + delta) / values.size();
+	float delta = value - m_cdf[l - 1];
+	delta = delta / (m_cdf[l] - m_cdf[l - 1]);
+	pdf = m_values[l] / integral;
+	return (l + delta) / m_values.size();
 }
 int Distribution1D::sampleDiscrete(float value, float& pdf) const {
-	int l = 0;
-	int r = values.size() - 1;
+	assert(m_values.size() > 1);
+	size_t l = 0;
+	size_t r = m_values.size() - 1;
 	while (l != r) {
 		int i = (r + l) / 2;
-		if (cdf[i + 1] > value)
+		if (m_cdf[i + 1] > value)
 			r = i;
 		else
 			l = i + 1;
@@ -43,10 +45,10 @@ int Distribution1D::sampleDiscrete(float value, float& pdf) const {
 }
 int Distribution1D::sampleDiscrete(float value) const {
 	int l = 0;
-	int r = values.size() - 1;
+	int r = m_values.size() - 1;
 	while (l != r) {
 		int i = (r + l) / 2;
-		if (cdf[i + 1] > value)
+		if (m_cdf[i + 1] > value)
 			r = i;
 		else
 			l = i + 1;
@@ -54,7 +56,7 @@ int Distribution1D::sampleDiscrete(float value) const {
 	return l;
 }
 float Distribution1D::discretePDF(int index) const {
-	return values[index] / (integral * values.size());
+	return m_values[index] / (integral * m_values.size());
 }
 int Distribution1D::sampleDiscrete() const {
 	float value = Random::random();

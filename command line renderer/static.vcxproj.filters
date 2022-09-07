@@ -5,21 +5,15 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Tests">
-      <UniqueIdentifier>{9cb4a78c-f947-48c9-b59b-df05d67fe226}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="tests.cpp">
+    <ClCompile Include="static.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="testAccelerators.h">
-      <Filter>Tests</Filter>
-    </ClInclude>
-    <ClInclude Include="testPointLocators.h">
-      <Filter>Tests</Filter>
+    <ClInclude Include="scenes.h">
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

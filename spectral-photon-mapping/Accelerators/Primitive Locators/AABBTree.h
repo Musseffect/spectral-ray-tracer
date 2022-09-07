@@ -26,7 +26,7 @@ namespace PrimitiveLocators {
 				tree.addLeaf(begin, end, depth, bounds, tempIndices);
 				return;
 			}
-			float middlePlane = 0.5 * (bounds.max() + bounds.min());
+			float middlePlane = 0.5 * (bounds.max()[dim] + bounds.min()[dim]);
 
 			int* midPtr = std::partition(&tempIndices[begin], &tempIndices[end - 1] + 1,
 				[dim, middlePlane, &bounds = tree.boundsArray](int index) {
@@ -124,7 +124,7 @@ namespace PrimitiveLocators {
 			for (int dim = 0; dim < 3; ++dim) {
 				if (centroidBBox.max()[dim] == centroidBBox.min()[dim])
 					continue;
-				float bucketWidth = centroidBBox.size()[dim] / float(bucketSize);
+				float bucketWidth = centroidBBox.size()[dim] / static_cast<float>(bucketSize);
 				Bucket buckets[bucketSize];
 				for (int i = begin; i != end; ++i) {
 					int primitiveId = tempIndices[i];
@@ -161,7 +161,7 @@ namespace PrimitiveLocators {
 				tree.addLeaf(begin, end, depth, bounds, tempIndices);
 				return;
 			}
-			float bucketWidth = centroidBBox.size()[minDim] / float(bucketSize);
+			float bucketWidth = centroidBBox.size()[minDim] / static_cast<float>(bucketSize);
 			int* midPtr = std::partition(&tempIndices[begin],
 				&tempIndices[end - 1] + 1,
 				[minDim, bucketWidth, minCostPlane, &tempIndices](int id) {
@@ -617,6 +617,17 @@ namespace PrimitiveLocators {
 			if (!current.bbox.intersect(ray))
 				continue;
 			if (current.type != Node::Leaf) {
+				// TODO : front to back
+				/*const Node& firstBBox = nodes[current.firstChild].bbox;
+				const Node& secondBBox = nodes[current.secondChild].bbox;
+				if (firstBBox.center() * ray.rd < secondBBox.center() * ray.rd) {
+					nodeStack.push(current.secondChild);
+					nodeStack.push(current.firstChild);
+				}
+				else {
+					nodeStack.push(current.firstChild);
+					nodeStack.push(current.secondChild);
+				}*/
 				nodeStack.push(current.secondChild);
 				nodeStack.push(current.firstChild);
 				continue;
@@ -641,6 +652,17 @@ namespace PrimitiveLocators {
 			if (!current.bbox.intersect(ray))
 				continue;
 			if (current.type != Node::Leaf) {
+				// TODO : front to back
+				/*const Node& firstBBox = nodes[current.firstChild].bbox;
+				const Node& secondBBox = nodes[current.secondChild].bbox;
+				if (firstBBox.center() * ray.rd < secondBBox.center() * ray.rd) {
+					nodeStack.push(current.secondChild);
+					nodeStack.push(current.firstChild);
+				}
+				else {
+					nodeStack.push(current.firstChild);
+					nodeStack.push(current.secondChild);
+				}*/
 				nodeStack.push(current.secondChild);
 				nodeStack.push(current.firstChild);
 				continue;

@@ -229,7 +229,7 @@ namespace Spectral {
 	using IdealGlass = ::IdealGlass<Color>;
 }
 
-namespace RGB {
+namespace Tristimulus {
 	using BxDF = ::BxDF<Color>;
 	using spBxDF = std::shared_ptr<BxDF>;
 	using LambertianReflection = ::LambertianReflection<Color>;

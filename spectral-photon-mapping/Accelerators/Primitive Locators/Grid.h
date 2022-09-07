@@ -1,6 +1,7 @@
 #pragma once
 #include "Base.h"
 #include <list>
+#include <stdexcept>
 
 namespace PrimitiveLocators {
 	template<class Primitive>

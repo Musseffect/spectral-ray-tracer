@@ -3,6 +3,8 @@
 #include "Transform.h"
 #include "Sampling.h"
 
+#include <stdexcept>
+
 const vec3 up(0.0f, 1.0f, 0.0f);
 const vec3 right(1.0, 0.0, 0.0);
 const vec3 forward(0.0, 0.0, -1.0);

@@ -86,7 +86,7 @@ namespace Spectral {
 }
 
 
-namespace RGB {
+namespace Tristimulus {
 	class Material {
 	public:
 		virtual std::shared_ptr<BSDF> bsdf(const HitInfo& hitInfo) const = 0;

@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include <stdexcept>
 
 #include "Ray.h"
 #include "BBox3D.h"

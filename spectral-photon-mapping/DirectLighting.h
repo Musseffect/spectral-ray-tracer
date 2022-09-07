@@ -1,10 +1,10 @@
 #pragma once
 
-namespace RGB {
-	namespace Direct {
-		struct Settings {
-			int lightSamples;
-		};
+namespace DirectLighting {
+	struct Settings {
+		int lightSamples;
+	};
+	namespace Tristimulus {
 		class Tracer {
 
 

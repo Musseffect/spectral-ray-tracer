@@ -3,135 +3,340 @@
 #include <functional>
 #include <array>
 
-#include "Distribution1D.h"
 #include "Function1D.h"
+#include "ColorSampler.h"
+#include "ColorSpaces.h"
 
 using rgb = glm::vec3;
 
 namespace Spectral {
 	using Color = float;
 }
-namespace RGB {
+namespace Tristimulus {
 	using Color = rgb;
 }
 
+// todo: Munsell color chart
 
 class ColorSampler;
 
-vec3 XYZToRGB(vec3 xyz);
+namespace Tristimulus {
+	namespace sRGB {
+		extern const vec3 black;
+		extern const vec3 white;
+		extern const vec3 red;
+		extern const vec3 green;
+		extern const vec3 blue;
+		extern const vec3 cyan;
+		extern const vec3 magenta;
+		extern const vec3 yellow;
+		namespace ColorChecker {
+			extern const vec3 colors[24];
+			extern const vec3& darkSkin;
+			extern const vec3& lightSkin;
+			extern const vec3& bluSky;
+			extern const vec3& foliage;
+			extern const vec3& blueFlower;
+			extern const vec3& bluishGreen;
+			extern const vec3& orange;
+			extern const vec3& purplishBlue;
+			extern const vec3& moderateRed;
+			extern const vec3& purple;
+			extern const vec3& yellowGreen;
+			extern const vec3& orangeYellow;
+			extern const vec3& blue;
+			extern const vec3& green;
+			extern const vec3& red;
+			extern const vec3& yellow;
+			extern const vec3& magenta;
+			extern const vec3& cyan;
+			extern const vec3& white_9_5;
+			extern const vec3& neutral_8;
+			extern const vec3& neutral_6_5;
+			extern const vec3& neutral_5;
+			extern const vec3& neutral_3_5;
+			extern const vec3& black_2;
 
-// integral of product of piecewise linear curves based on regularly sampled values from two distributions
-float integratProduct(const ColorSampler* const a, const ColorSampler* const b, float min, float max, int samples = 60);
-
-template<class T>
-T xFit_1931(T wave) {
-	T t1 = (wave - T(442.0))*((wave < T(442.0)) ? T(0.0624) : T(0.0374));
-	T t2 = (wave - T(599.8))*((wave < T(599.8)) ? T(0.0264) : T(0.0323));
-	T t3 = (wave - T(501.1))*((wave < T(501.1)) ? T(0.0490) : T(0.0382));
-	return T(0.362) * glm::exp(-T(0.5) * t1 * t1) +
-		T(1.056) * glm::exp(-T(0.5) * t2 * t2) -
-		T(0.065) * glm::exp(-T(0.5) * t3 * t3);
+			const vec3& colorByIndex(int index);
+		};
+	};
+	namespace XYZ {
+		namespace ColorChecker {
+		}
+	}
 }
 
-template<class T>
-T yFit_1931(T wave) {
-	T t1 = (wave - T(568.8))*((wave < T(568.8)) ? T(0.0213) : T(0.0247));
-	T t2 = (wave - T(530.9))*((wave < T(530.9)) ? T(0.0613) : T(0.0322));
-	return T(0.821) * glm::exp(-T(0.5) * t1 * t1) +
-		T(0.286) * glm::exp(-T(0.5) * t2 * t2);
+namespace Spectral {
+	namespace ColorChecker {
+		// E white point, to convert in sRGB use E -> D65 chromatic adaptation
+		extern const spSpectrumSampler colors[24];
+		const spSpectrumSampler& colorByIndex(int index);
+	};
+	// D65 illuminant
+	namespace IT8 {
+		extern const spSpectrumSampler colors[240];
+		extern const spSpectrumSampler grayscale[24];
+
+		extern const spSpectrumSampler& A1;
+		extern const spSpectrumSampler& B1;
+		extern const spSpectrumSampler& C1;
+		extern const spSpectrumSampler& D1;
+		extern const spSpectrumSampler& E1;
+		extern const spSpectrumSampler& F1;
+		extern const spSpectrumSampler& G1;
+		extern const spSpectrumSampler& H1;
+		extern const spSpectrumSampler& I1;
+		extern const spSpectrumSampler& J1;
+		extern const spSpectrumSampler& K1;
+		extern const spSpectrumSampler& L1;
+
+		extern const spSpectrumSampler& A2;
+		extern const spSpectrumSampler& B2;
+		extern const spSpectrumSampler& C2;
+		extern const spSpectrumSampler& D2;
+		extern const spSpectrumSampler& E2;
+		extern const spSpectrumSampler& F2;
+		extern const spSpectrumSampler& G2;
+		extern const spSpectrumSampler& H2;
+		extern const spSpectrumSampler& I2;
+		extern const spSpectrumSampler& J2;
+		extern const spSpectrumSampler& K2;
+		extern const spSpectrumSampler& L2;
+
+		extern const spSpectrumSampler& A3;
+		extern const spSpectrumSampler& B3;
+		extern const spSpectrumSampler& C3;
+		extern const spSpectrumSampler& D3;
+		extern const spSpectrumSampler& E3;
+		extern const spSpectrumSampler& F3;
+		extern const spSpectrumSampler& G3;
+		extern const spSpectrumSampler& H3;
+		extern const spSpectrumSampler& I3;
+		extern const spSpectrumSampler& J3;
+		extern const spSpectrumSampler& K3;
+		extern const spSpectrumSampler& L3;
+
+		extern const spSpectrumSampler& A4;
+		extern const spSpectrumSampler& B4;
+		extern const spSpectrumSampler& C4;
+		extern const spSpectrumSampler& D4;
+		extern const spSpectrumSampler& E4;
+		extern const spSpectrumSampler& F4;
+		extern const spSpectrumSampler& G4;
+		extern const spSpectrumSampler& H4;
+		extern const spSpectrumSampler& I4;
+		extern const spSpectrumSampler& J4;
+		extern const spSpectrumSampler& K4;
+		extern const spSpectrumSampler& L4;
+
+		extern const spSpectrumSampler& A5;
+		extern const spSpectrumSampler& B5;
+		extern const spSpectrumSampler& C5;
+		extern const spSpectrumSampler& D5;
+		extern const spSpectrumSampler& E5;
+		extern const spSpectrumSampler& F5;
+		extern const spSpectrumSampler& G5;
+		extern const spSpectrumSampler& H5;
+		extern const spSpectrumSampler& I5;
+		extern const spSpectrumSampler& J5;
+		extern const spSpectrumSampler& K5;
+		extern const spSpectrumSampler& L5;
+
+		extern const spSpectrumSampler& A6;
+		extern const spSpectrumSampler& B6;
+		extern const spSpectrumSampler& C6;
+		extern const spSpectrumSampler& D6;
+		extern const spSpectrumSampler& E6;
+		extern const spSpectrumSampler& F6;
+		extern const spSpectrumSampler& G6;
+		extern const spSpectrumSampler& H6;
+		extern const spSpectrumSampler& I6;
+		extern const spSpectrumSampler& J6;
+		extern const spSpectrumSampler& K6;
+		extern const spSpectrumSampler& L6;
+
+		extern const spSpectrumSampler& A7;
+		extern const spSpectrumSampler& B7;
+		extern const spSpectrumSampler& C7;
+		extern const spSpectrumSampler& D7;
+		extern const spSpectrumSampler& E7;
+		extern const spSpectrumSampler& F7;
+		extern const spSpectrumSampler& G7;
+		extern const spSpectrumSampler& H7;
+		extern const spSpectrumSampler& I7;
+		extern const spSpectrumSampler& J7;
+		extern const spSpectrumSampler& K7;
+		extern const spSpectrumSampler& L7;
+
+		extern const spSpectrumSampler& A8;
+		extern const spSpectrumSampler& B8;
+		extern const spSpectrumSampler& C8;
+		extern const spSpectrumSampler& D8;
+		extern const spSpectrumSampler& E8;
+		extern const spSpectrumSampler& F8;
+		extern const spSpectrumSampler& G8;
+		extern const spSpectrumSampler& H8;
+		extern const spSpectrumSampler& I8;
+		extern const spSpectrumSampler& J8;
+		extern const spSpectrumSampler& K8;
+		extern const spSpectrumSampler& L8;
+
+		extern const spSpectrumSampler& A9;
+		extern const spSpectrumSampler& B9;
+		extern const spSpectrumSampler& C9;
+		extern const spSpectrumSampler& D9;
+		extern const spSpectrumSampler& E9;
+		extern const spSpectrumSampler& F9;
+		extern const spSpectrumSampler& G9;
+		extern const spSpectrumSampler& H9;
+		extern const spSpectrumSampler& I9;
+		extern const spSpectrumSampler& J9;
+		extern const spSpectrumSampler& K9;
+		extern const spSpectrumSampler& L9;
+
+		extern const spSpectrumSampler& A10;
+		extern const spSpectrumSampler& B10;
+		extern const spSpectrumSampler& C10;
+		extern const spSpectrumSampler& D10;
+		extern const spSpectrumSampler& E10;
+		extern const spSpectrumSampler& F10;
+		extern const spSpectrumSampler& G10;
+		extern const spSpectrumSampler& H10;
+		extern const spSpectrumSampler& I10;
+		extern const spSpectrumSampler& J10;
+		extern const spSpectrumSampler& K10;
+		extern const spSpectrumSampler& L10;
+
+		extern const spSpectrumSampler& A11;
+		extern const spSpectrumSampler& B11;
+		extern const spSpectrumSampler& C11;
+		extern const spSpectrumSampler& D11;
+		extern const spSpectrumSampler& E11;
+		extern const spSpectrumSampler& F11;
+		extern const spSpectrumSampler& G11;
+		extern const spSpectrumSampler& H11;
+		extern const spSpectrumSampler& I11;
+		extern const spSpectrumSampler& J11;
+		extern const spSpectrumSampler& K11;
+		extern const spSpectrumSampler& L11;
+
+		extern const spSpectrumSampler& A12;
+		extern const spSpectrumSampler& B12;
+		extern const spSpectrumSampler& C12;
+		extern const spSpectrumSampler& D12;
+		extern const spSpectrumSampler& E12;
+		extern const spSpectrumSampler& F12;
+		extern const spSpectrumSampler& G12;
+		extern const spSpectrumSampler& H12;
+		extern const spSpectrumSampler& I12;
+		extern const spSpectrumSampler& J12;
+		extern const spSpectrumSampler& K12;
+		extern const spSpectrumSampler& L12;
+
+		extern const spSpectrumSampler& A13;
+		extern const spSpectrumSampler& B13;
+		extern const spSpectrumSampler& C13;
+		extern const spSpectrumSampler& D13;
+		extern const spSpectrumSampler& E13;
+		extern const spSpectrumSampler& F13;
+		extern const spSpectrumSampler& G13;
+		extern const spSpectrumSampler& H13;
+		extern const spSpectrumSampler& I13;
+		extern const spSpectrumSampler& J13;
+		extern const spSpectrumSampler& K13;
+		extern const spSpectrumSampler& L13;
+
+		extern const spSpectrumSampler& A14;
+		extern const spSpectrumSampler& B14;
+		extern const spSpectrumSampler& C14;
+		extern const spSpectrumSampler& D14;
+		extern const spSpectrumSampler& E14;
+		extern const spSpectrumSampler& F14;
+		extern const spSpectrumSampler& G14;
+		extern const spSpectrumSampler& H14;
+		extern const spSpectrumSampler& I14;
+		extern const spSpectrumSampler& J14;
+		extern const spSpectrumSampler& K14;
+		extern const spSpectrumSampler& L14;
+
+		extern const spSpectrumSampler& A15;
+		extern const spSpectrumSampler& B15;
+		extern const spSpectrumSampler& C15;
+		extern const spSpectrumSampler& D15;
+		extern const spSpectrumSampler& E15;
+		extern const spSpectrumSampler& F15;
+		extern const spSpectrumSampler& G15;
+		extern const spSpectrumSampler& H15;
+		extern const spSpectrumSampler& I15;
+		extern const spSpectrumSampler& J15;
+		extern const spSpectrumSampler& K15;
+		extern const spSpectrumSampler& L15;
+
+		extern const spSpectrumSampler& A16;
+		extern const spSpectrumSampler& B16;
+		extern const spSpectrumSampler& C16;
+		extern const spSpectrumSampler& D16;
+		extern const spSpectrumSampler& E16;
+		extern const spSpectrumSampler& F16;
+		extern const spSpectrumSampler& G16;
+		extern const spSpectrumSampler& H16;
+		extern const spSpectrumSampler& I16;
+		extern const spSpectrumSampler& J16;
+		extern const spSpectrumSampler& K16;
+		extern const spSpectrumSampler& L16;
+
+		extern const spSpectrumSampler& A17;
+		extern const spSpectrumSampler& B17;
+		extern const spSpectrumSampler& C17;
+		extern const spSpectrumSampler& D17;
+		extern const spSpectrumSampler& E17;
+		extern const spSpectrumSampler& F17;
+		extern const spSpectrumSampler& G17;
+		extern const spSpectrumSampler& H17;
+		extern const spSpectrumSampler& I17;
+		extern const spSpectrumSampler& J17;
+		extern const spSpectrumSampler& K17;
+		extern const spSpectrumSampler& L17;
+
+		extern const spSpectrumSampler& A18;
+		extern const spSpectrumSampler& B18;
+		extern const spSpectrumSampler& C18;
+		extern const spSpectrumSampler& D18;
+		extern const spSpectrumSampler& E18;
+		extern const spSpectrumSampler& F18;
+		extern const spSpectrumSampler& G18;
+		extern const spSpectrumSampler& H18;
+		extern const spSpectrumSampler& I18;
+		extern const spSpectrumSampler& J18;
+		extern const spSpectrumSampler& K18;
+		extern const spSpectrumSampler& L18;
+
+		extern const spSpectrumSampler& A19;
+		extern const spSpectrumSampler& B19;
+		extern const spSpectrumSampler& C19;
+		extern const spSpectrumSampler& D19;
+		extern const spSpectrumSampler& E19;
+		extern const spSpectrumSampler& F19;
+		extern const spSpectrumSampler& G19;
+		extern const spSpectrumSampler& H19;
+		extern const spSpectrumSampler& I19;
+		extern const spSpectrumSampler& J19;
+		extern const spSpectrumSampler& K19;
+		extern const spSpectrumSampler& L19;
+
+		extern const spSpectrumSampler& I20;
+		extern const spSpectrumSampler& J20;
+		extern const spSpectrumSampler& K20;
+		extern const spSpectrumSampler& L20;
+
+		extern const spSpectrumSampler& I21;
+		extern const spSpectrumSampler& J21;
+		extern const spSpectrumSampler& K21;
+		extern const spSpectrumSampler& L21;
+
+		extern const spSpectrumSampler& I22;
+		extern const spSpectrumSampler& J22;
+		extern const spSpectrumSampler& K22;
+		extern const spSpectrumSampler& L22;
+	}
 }
-
-template<class T>
-T zFit_1931(T wave) {
-	T t1 = (wave - T(437.0))*((wave < T(437.0)) ? T(0.0845) : T(0.0278));
-	T t2 = (wave - T(459.0))*((wave < T(459.0)) ? T(0.0385) : T(0.0725));
-	return T(1.217) * glm::exp(-T(0.5) * t1 * t1) +
-		T(0.681) * glm::exp(-T(0.5) * t2 * t2);
-}
-
-vec3 wavelengthToRGB(float wavelength, float intensity = 1.0f);
-vec3 spectrumToRGB(const ColorSampler* const sampler, float min, float max, int samples = 60);
-
-static const float D65 = 6504;
-
-class BlackBodySPD {
-protected:
-	float temperature = 2856; // standart illuminant A
-public:
-	float sample(float wavelength) const;
-	BlackBodySPD(float temperature) : temperature(temperature) {};
-};
-
-class BlackBodySPDNormalized: protected BlackBodySPD {
-	float temperature = 2856; // standart illuminant A
-public:
-	float sample(float wavelength) const;
-	BlackBodySPDNormalized(float temperature) : BlackBodySPD(temperature) {};
-};
-
-class ColorSampler {
-public:
-	float integral(float min, float max, int samples = 60) const;
-	// wavelength in nanometers
-	virtual float sample(float wavelength) const = 0;
-};
-
-class ConstantSampler : public ColorSampler {
-	float value;
-public:
-	ConstantSampler(float value) : value(value) {}
-	virtual float sample(float wavelength) const override {
-		return value;
-	}
-};
-
-template<typename Functor>
-class AnalyticalSampler : public ColorSampler {
-private:
-	Functor function;
-public:
-	AnalyticalSampler(const Functor& function):function(function)
-	{
-	}
-	virtual float sample(float wavelength) const override {
-		return function(wavelength);
-	}
-};
-
-class BlackBodyColorSampler : public ColorSampler {
-	BlackBodySPDNormalized spd;
-	float intensity;
-public:
-	BlackBodyColorSampler(float temperature, float intensity) :spd(temperature), intensity(intensity){
-	}
-	virtual float sample(float wavelength) const override;
-};
-
-class RGBColorSampler : public ColorSampler {
-	vec3 rgb;
-	// reconstruction curves
-	static GridFunction1D redCurve;
-	static GridFunction1D greenCurve;
-	static GridFunction1D blueCurve;
-public:
-	RGBColorSampler(const vec3& rgb) :rgb(rgb) {}
-	vec3 color() const { return rgb; }
-	virtual float sample(float wavelength) const override;
-};
-
-class SpectrumSampler : public ColorSampler {
-	std::shared_ptr<Function1D> function;
-public:
-	SpectrumSampler(const std::shared_ptr<Function1D>& function) : function(function) {}
-	virtual float sample(float wavelength) const override;
-};
-
-
-
-using spColorSampler = std::shared_ptr<ColorSampler>;
-using spSpectrumSampler = std::shared_ptr<SpectrumSampler>;
-using spRGBColorSampler = std::shared_ptr<RGBColorSampler>;
-using spBlackBodyColorSampler = std::shared_ptr<BlackBodyColorSampler>;
-
-template<class T>
-using spAnalyticalSampler = std::shared_ptr<AnalyticalSampler<T>>;

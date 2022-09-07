@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include "Scene.h"
 #include "Color.h"
 #include "Camera.h"
@@ -6,10 +7,26 @@
 #include "Progress.h"
 #include "Distribution1D.h"
 
+namespace {
+	vec3 toGrid(const vec3& p, const AABB& bounds, const glm::ivec3& gridRes);
+	vec3 toGridClamped(const vec3& p, const AABB& bounds, const glm::ivec3& gridRes);
+}
+
 namespace Spectral {
 	namespace SPPM {
-		vec3 toGrid(const vec3& p, const AABB& bounds, const glm::ivec3& gridRes);
-		vec3 toGridClamped(const vec3& p, const AABB& bounds, const glm::ivec3& gridRes);
+		constexpr float ShadowEps = 0.001f;
+		constexpr float OffsetEps = 0.001f;
+
+		struct Settings {
+			// todo: Not implemented
+			int threads = 8;
+			// todo: Not implemented
+			int tileSize = 16;
+			int photonsPerIteration = 10000;
+			int iterations = 200;
+			int maxDepth = 5;
+			float initialRadius = 1.0f;
+		};
 
 		struct PixelInfo {
 			float radius;
@@ -19,6 +36,7 @@ namespace Spectral {
 			float n = 0.0f;
 			int m = 0;
 		};
+
 		struct SpectralPhoton {
 			vec3 center;
 			vec3 wi;
@@ -35,7 +53,7 @@ namespace Spectral {
 			vec3 wo;
 			float luminocity;
 			vec3 normal;
-			Spectral::spBSDF bsdf;
+			spBSDF bsdf;
 			const Primitive* primitive;
 			vec3 position() const {
 				return center;
@@ -55,19 +73,6 @@ namespace Spectral {
 			AABB bbox() const {
 				return AABB(center - vec3(pi->radius), center + vec3(pi->radius));
 			}
-		};
-		const float ShadowEps = 0.001f;
-		const float OffsetEps = 0.001f;
-		float powerHeuristic(int nf, float fPdf, int ng, float gPdf);
-		struct Settings {
-			// todo: Not implemented
-			int threads = 8;
-			// todo: Not implemented
-			int tileSize = 16;
-			int photonsPerIteration = 10000;
-			int iterations = 200;
-			int maxDepth = 5;
-			float initialRadius = 1.0f;
 		};
 		template<class RayTracerAccel>
 		class Tracer {
@@ -180,7 +185,7 @@ namespace Spectral {
 				float wavelength = Random::random(Config::get().spectrumMin(), Config::get().spectrumMax());
 
 				std::vector<VisibilityPoint> visibilityPoints = getVisibilityPoints(width, height, wavelength, pixelInfos.get());
-//#define GRID
+				//#define GRID
 #ifndef GRID
 				SearchAccel searchAccel(visibilityPoints.begin(), visibilityPoints.end(), params...);
 #else
@@ -312,7 +317,7 @@ namespace Spectral {
 					pi.phi = 0.0f;
 					maxRadius = std::max(maxRadius, pi.radius);
 				}
-				progress->emitProgress(float(k) / settings.iterations);
+				progress->emitProgress(static_cast<float>(k) / settings.iterations);
 			}
 			Image<rgb> image(width, height, rgb(0.0));
 			for (int j = 0; j < height; j++)
@@ -333,7 +338,7 @@ namespace Spectral {
 		Image<rgb> Tracer<RayTraceAccel>::renderBackward(int width, int height, const std::unique_ptr<Progress>& progress) {
 			Image<rgb> image(width, height, rgb(0.0));
 			std::unique_ptr<PixelInfo[]> pixelInfos(new PixelInfo[width * height]);
-			for (int i = 0; i < width*height; i++)
+			for (int i = 0; i < width * height; i++)
 				pixelInfos[i].radius = settings.initialRadius;
 
 			vec2 resolution(width, height);
@@ -350,11 +355,11 @@ namespace Spectral {
 						gather<PointLocator>(ndc, wavelength, pointLocator, pixelInfos[i + j * width]);
 					}
 				}
-				progress->emitProgress(k / float(settings.iterations));
+				progress->emitProgress(k / static_cast<float> (settings.iterations));
 			}
 			for (int j = 0; j < height; j++) {
 				for (int i = 0; i < width; i++) {
-					float N = std::max(settings.iterations * settings.photonsPerIteration, 1);
+					float N = static_cast<float>(std::max(settings.iterations * settings.photonsPerIteration, 1));
 					const PixelInfo& pixelInfo = pixelInfos[i + j * width];
 					image(i, j) = pixelInfo.directLight / settings.iterations +
 						pixelInfo.indirectLight / (N * pixelInfo.radius * pixelInfo.radius * glm::pi<float>());
@@ -364,7 +369,7 @@ namespace Spectral {
 			return image;
 		}
 		template<class RayTraceAccel>
-		float Tracer<RayTraceAccel>::sampleLight(int index, const vec3& wo, const HitInfo& hitInfo, const std::shared_ptr<Spectral::BSDF>& bsdf, float wavelength) const {
+		float Tracer<RayTraceAccel>::sampleLight(int index, const vec3& wo, const HitInfo& hitInfo, const std::shared_ptr<BSDF>& bsdf, float wavelength) const {
 			const spLight light = scene->light(index);
 			//sample light
 			float lightPdf;
@@ -386,7 +391,7 @@ namespace Spectral {
 						if (light->isDelta())
 							ld += f * li / lightPdf;
 						else {
-							float weight = powerHeuristic(1, lightPdf, 1, scatteringPdf);
+							float weight = Sampling::powerHeuristic(1, lightPdf, 1, scatteringPdf);
 							ld += f * li * weight / lightPdf;
 						}
 					}
@@ -405,7 +410,7 @@ namespace Spectral {
 						lightPdf = light->pdfLi(hitInfo, wi);
 						if (lightPdf == 0.0f)
 							return ld;
-						weight = powerHeuristic(1, scatteringPdf, 1, lightPdf);
+						weight = Sampling::powerHeuristic(1, scatteringPdf, 1, lightPdf);
 					}
 					HitInfo lightHitInfo;
 					Ray ray(hitInfo.globalPosition, wi);
@@ -558,4 +563,10 @@ namespace Spectral {
 		}
 	}
 
+	namespace Tristimulus {
+		class Renderer {
+
+
+		};
+	}
 }

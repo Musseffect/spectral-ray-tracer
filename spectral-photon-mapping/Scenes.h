@@ -17,21 +17,21 @@ template<class RayTracerAccel>
 class Scene;
 
 template<class RayTracerAccel>
-std::shared_ptr<Scene<RayTracerAccel>> createPrismScene();
+spScene<RayTracerAccel> createPrismScene();
 
 template<class RayTracerAccel>
-std::shared_ptr<Scene<RayTracerAccel>> testMISScene();
+spScene<RayTracerAccel> testMISScene();
 
 template<class RayTracerAccel>
-std::shared_ptr<Scene<RayTracerAccel>> furnaceTestScene();
+spScene<RayTracerAccel> furnaceTestScene();
 
 template<class RayTracerAccel>
-std::shared_ptr<Scene<RayTracerAccel>> createCornwellBox();
+spScene<RayTracerAccel> createCornwellBox();
 
 
 template<class RayTracerAccel>
-std::shared_ptr<Scene<RayTracerAccel>> createPrismScene() {
-	std::shared_ptr<Scene<RayTracerAccel>> scene = std::make_shared<Scene<RayTracerAccel>>();
+spScene<RayTracerAccel> createPrismScene() {
+	spScene<RayTracerAccel> scene = std::make_shared<Scene<RayTracerAccel>>();
 	float z = std::sqrt(3.0f) / 4.0f;
 	vec3 a(-0.5f, 0.5f, -z), b(0.0f, 0.5f, z), c(0.5f, 0.5f, -z);
 	vec3 d(-0.5f, -0.5f, -z), e(0.5f, -0.5f, -z), f(0.0f, -0.5f, z);
@@ -83,7 +83,7 @@ std::shared_ptr<Scene<RayTracerAccel>> createPrismScene() {
 			vec3(1000.0f)
 		))
 		);
-	std::shared_ptr<Function1D> customRefractionCurve(new GridFunction1D(400.0, 700.0, { 1.5, 1.35, 1.3 }));
+	std::shared_ptr<Function1D> customRefractionCurve(new GridFunction1D(400.0f, 700.0f, { 1.5f, 1.35f, 1.3f }));
 	std::shared_ptr<ColorSampler> customRefraction = std::make_shared<SpectrumSampler>(customRefractionCurve);
 	//use flint glass
 	std::shared_ptr<ColorSampler> glassRefraction = std::make_shared<AnalyticalSampler<CauchyEquation>>(SF10);
@@ -144,7 +144,7 @@ std::shared_ptr<Scene<RayTracerAccel>> createPrismScene() {
 }
 
 template<class RayTracerAccel>
-std::shared_ptr<Scene<RayTracerAccel>> testMISScene() {
+spScene<RayTracerAccel> testMISScene() {
 	std::shared_ptr<Scene<RayTracerAccel>> scene = std::make_shared<Scene<RayTracerAccel>>();
 	std::shared_ptr<Sphere> sphere = std::make_shared<Sphere>();
 	std::shared_ptr<Rect> rect = std::make_shared<Rect>();
@@ -158,6 +158,9 @@ std::shared_ptr<Scene<RayTracerAccel>> testMISScene() {
 	std::shared_ptr<Shape> secondRect = ;
 	std::shared_ptr<Shape> thirdRect = ;
 	std::shared_ptr<Shape> fourthRect = ;
+
+	std::shared_ptr<Shape> backWall = ;
+	std::shared_ptr<Shape> bottomWall = ;
 
 	std::shared_ptr<Light> ambientLight = std::make_shared<Light>(
 		sphere,
@@ -173,7 +176,24 @@ std::shared_ptr<Scene<RayTracerAccel>> testMISScene() {
 }
 
 template<class RayTracerAccel>
-std::shared_ptr<Scene<RayTracerAccel>> furnaceTestScene() {
+spScene<RayTracerAccel> furnaceTestScene() {
+	spScene<RayTracerAccel> scene = std::make_shared<Scene>();
+	spShape sphereShape = std::make_shared<Sphere>(vec3(0.0f), 0.5);
+	spRGBColorSampler gray(new RGBColorSampler(vec3(0.18f)));
+	spTex<spColorSampler> grayTexture = std::make_shared<ConstantTexture<spColorSampler>>(gray);
+	std::shared_ptr<Spectral::DiffuseMaterial> grayDiffuse = std::make_shared<Spectral::DiffuseMaterial>(grayTexture);
+	spPrimitive spherePrimitive = std::make_shared<Primitive>(
+		sphereShape,
+		grayDiffuse,
+		Affine(Transform(vec3(0.0f, 0.0f, 0.0f), glm::quat(), vec3(1.0f, 1.0f, 1.0f)))
+		);
+	scene->addPrimitive(spherePrimitive);
+	std::shared_ptr<Light> rectLight = std::make_shared<DiffuseAreaLight>(
+		Affine(Transform(vec3(0.0f, 0.0f 0.0f), glm::quat(), vec3(1000.0f, 1000.0f, 1000.0f))),
+		lightColor,
+		sphereShape
+		);
+	scene->addLight();
 	throw std::runtime_error("Not impelmented");
 	/*spScene scene = std::make_shared<Scene>();
 	spShape sphere = std::make_shared<Sphere>();
@@ -190,7 +210,7 @@ std::shared_ptr<Scene<RayTracerAccel>> createCornwellBox() {
 	//#define FULL_SPECTRAL_RGB
 #ifdef FULL_SPECTRAL_MATERIAL
 	std::shared_ptr<GridFunction1D> whiteSpectrum(new GridFunction1D(400.0f, 700.0f,
-		{ 0.343, 0.445, 0.551, 0.624, 0.665, 0.687, 0.708, 0.723, 0.715, 0.71, 0.745, 0.758, 0.739, 0.767, 0.777, 0.765, 0.751, 0.745, 0.748, 0.729, 0.745, 0.757, 0.753, 0.75, 0.746, 0.747, 0.735, 0.732, 0.739, 0.734, 0.725, 0.721, 0.733, 0.725, 0.732, 0.743, 0.744, 0.748, 0.728, 0.716, 0.733, 0.726, 0.713, 0.74, 0.754, 0.764, 0.752, 0.736, 0.734, 0.741, 0.74, 0.732, 0.745, 0.755, 0.751, 0.744, 0.731, 0.733, 0.744, 0.731, 0.712, 0.708, 0.729, 0.73, 0.727, 0.707, 0.703, 0.729, 0.75, 0.76, 0.751, 0.739, 0.724, 0.73, 0.74, 0.737 }
+		{ 0.343f, 0.445, 0.551, 0.624, 0.665, 0.687, 0.708, 0.723, 0.715, 0.71, 0.745, 0.758, 0.739, 0.767, 0.777, 0.765, 0.751, 0.745, 0.748, 0.729, 0.745, 0.757, 0.753, 0.75, 0.746, 0.747, 0.735, 0.732, 0.739, 0.734, 0.725, 0.721, 0.733, 0.725, 0.732, 0.743, 0.744, 0.748, 0.728, 0.716, 0.733, 0.726, 0.713, 0.74, 0.754, 0.764, 0.752, 0.736, 0.734, 0.741, 0.74, 0.732, 0.745, 0.755, 0.751, 0.744, 0.731, 0.733, 0.744, 0.731, 0.712, 0.708, 0.729, 0.73, 0.727, 0.707, 0.703, 0.729, 0.75, 0.76, 0.751, 0.739, 0.724, 0.73, 0.74, 0.737 }
 	));
 	std::shared_ptr<GridFunction1D> redSpectrum(new GridFunction1D(400.0f, 700.0f,
 		{ 0.092, 0.096, 0.098, 0.097, 0.098, 0.095, 0.095, 0.097, 0.095, 0.094, 0.097, 0.098, 0.096, 0.101, 0.103, 0.104, 0.107, 0.109, 0.112, 0.115, 0.125, 0.14, 0.16, 0.187, 0.229, 0.285, 0.343, 0.39, 0.435, 0.464, 0.472, 0.476, 0.481, 0.462, 0.447, 0.441, 0.426, 0.406, 0.373, 0.347, 0.337, 0.314, 0.285, 0.277, 0.266, 0.25, 0.23, 0.207, 0.186, 0.171, 0.16, 0.148, 0.141, 0.136, 0.13, 0.126, 0.123, 0.121, 0.122, 0.119, 0.114, 0.115, 0.117, 0.117, 0.118, 0.12, 0.122, 0.128, 0.132, 0.139, 0.144, 0.146, 0.15, 0.152, 0.157, 0.159 }
@@ -199,13 +219,13 @@ std::shared_ptr<Scene<RayTracerAccel>> createCornwellBox() {
 		{ 0.04, 0.046, 0.048, 0.053, 0.049, 0.05, 0.053, 0.055, 0.057, 0.056, 0.059, 0.057, 0.061, 0.061, 0.06, 0.062, 0.062, 0.062, 0.061, 0.062, 0.06, 0.059, 0.057, 0.058, 0.058, 0.058, 0.056, 0.055, 0.056, 0.059, 0.057, 0.055, 0.059, 0.059, 0.058, 0.059, 0.061, 0.061, 0.063, 0.063, 0.067, 0.068, 0.072, 0.08, 0.09, 0.099, 0.124, 0.154, 0.192, 0.255, 0.287, 0.349, 0.402, 0.443, 0.487, 0.513, 0.558, 0.584, 0.62, 0.606, 0.609, 0.651, 0.612, 0.61, 0.65, 0.638, 0.627, 0.62, 0.63, 0.628, 0.642, 0.639, 0.657, 0.639, 0.635, 0.642 }
 	));
 	std::shared_ptr<GridFunction1D> lightSpectrum(new GridFunction1D(400.0f, 700.0f,
-		{ 0.0f, 8.0f, 15.6f, 18.4f }
+		{ 0.0f, 8.0f, 15.6, 18.4f }
 	));
 	lightSpectrum->scale(1.0f);
-	spSpectrumSampler whiteColorSpectrum(new SpectrumSampler(whiteSpectrum));
-	spSpectrumSampler greenColorSpectrum(new SpectrumSampler(greenSpectrum));
-	spSpectrumSampler redColorSpectrum(new SpectrumSampler(redSpectrum));
-	spSpectrumSampler lightColorSpectrum(new SpectrumSampler(lightSpectrum));
+	spColorSampler whiteColorSpectrum(new SpectrumSampler(whiteSpectrum));
+	spColorSampler greenColorSpectrum(new SpectrumSampler(greenSpectrum));
+	spColorSampler redColorSpectrum(new SpectrumSampler(redSpectrum));
+	spColorSampler lightColorSpectrum(new SpectrumSampler(lightSpectrum));
 	std::shared_ptr<ColorSampler> black(new ConstantSampler(0.0f));
 #ifdef FULL_SPECTRAL_RGB
 	std::shared_ptr<RGBColorSampler> white(new RGBColorSampler(spectrumToRGB(whiteColorSpectrum.get(), 400.0f, 700.0f, 60) * 3.0f / 300.0f));
@@ -218,10 +238,10 @@ std::shared_ptr<Scene<RayTracerAccel>> createCornwellBox() {
 	printf("White: %f, %f, %f \n", white->color().r, white->color().g, white->color().b);
 	printf("Light: %f, %f, %f \n", lightColor->color().r, lightColor->color().g, lightColor->color().b);
 #else
-	spSpectrumSampler& white = whiteColorSpectrum;
-	spSpectrumSampler& green = greenColorSpectrum;
-	spSpectrumSampler& red = redColorSpectrum;
-	spSpectrumSampler& lightColor = lightColorSpectrum;
+	spColorSampler& white = whiteColorSpectrum;
+	spColorSampler& green = greenColorSpectrum;
+	spColorSampler& red = redColorSpectrum;
+	spColorSampler& lightColor = lightColorSpectrum;
 #endif
 #else
 	std::shared_ptr<RGBColorSampler> white(new RGBColorSampler(vec3(1.0f)));
@@ -325,32 +345,32 @@ std::shared_ptr<Scene<RayTracerAccel>> createCornwellBox() {
 		lightColor,
 		vec2(130.0f, 105.0f)
 		);*/
-	/*
-	//front
-	std::shared_ptr<Light> rectLight2 = std::make_shared<DiffuseAreaLight>(
-		Affine(Transform(vec3(278.0f, 548.8f - 5.01f, 279.6f - 52.5f),
-			glm::angleAxis(glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)),
-			vec3(130.0f, 10.0f, 10.0f))),
-		lightColor,
-		rect
-		);*/
-	/*
-	//left
-	std::shared_ptr<Light> rectLight3 = std::make_shared<DiffuseAreaLight>(
-		Affine(Rigid(vec3(278.0f, 548.8f - 5.01f, 279.6f),
-			quat(),
-			vec3(130.0f, 10.01f, 105.0f))),
-		lightColor,
-		rect
-		);
-	//right
-	std::shared_ptr<Light> rectLight4 = std::make_shared<DiffuseAreaLight>(
-		Affine(Rigid(vec3(278.0f, 548.8f - 5.01f, 279.6f),
-			quat(),
-			vec3(130.0f, 10.01f, 105.0f))),
-		lightColor,
-		rect
-		);*/
+		/*
+		//front
+		std::shared_ptr<Light> rectLight2 = std::make_shared<DiffuseAreaLight>(
+			Affine(Transform(vec3(278.0f, 548.8f - 5.01f, 279.6f - 52.5f),
+				glm::angleAxis(glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)),
+				vec3(130.0f, 10.0f, 10.0f))),
+			lightColor,
+			rect
+			);*/
+			/*
+			//left
+			std::shared_ptr<Light> rectLight3 = std::make_shared<DiffuseAreaLight>(
+				Affine(Rigid(vec3(278.0f, 548.8f - 5.01f, 279.6f),
+					quat(),
+					vec3(130.0f, 10.01f, 105.0f))),
+				lightColor,
+				rect
+				);
+			//right
+			std::shared_ptr<Light> rectLight4 = std::make_shared<DiffuseAreaLight>(
+				Affine(Rigid(vec3(278.0f, 548.8f - 5.01f, 279.6f),
+					quat(),
+					vec3(130.0f, 10.01f, 105.0f))),
+				lightColor,
+				rect
+				);*/
 	scene->addPrimitive(floor);
 	scene->addPrimitive(ceiling);
 	scene->addPrimitive(backWall);

@@ -29,7 +29,7 @@ public:
 	{
 	}
 	virtual const T sample(const HitInfo& hitInfo) const override {
-		glm::ivec2 iuv = glm::floor(hitInfo.uv * 2);
+		glm::ivec2 iuv = glm::floor(hitInfo.uv * 2.0f);
 		if ((iuv.x + iuv.y) % 2 == 0) {
 			return black;
 		}
@@ -46,7 +46,7 @@ public:
 	{
 	}
 	virtual const T sample(const HitInfo& hitInfo) const override {
-		glm::ivec3 iuvs = glm::floor(hitInfo.localPosition * 2);
+		glm::ivec3 iuvs = glm::floor(hitInfo.localPosition * 2.0f);
 		if ((iuvs.x + iuvs.y + iuvs.z) % 2 == 0) {
 			return black;
 		}

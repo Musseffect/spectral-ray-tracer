@@ -20,11 +20,11 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{9B123CBA-7560-407C-A880-20F1379AF014}</ProjectGuid>
+    <ProjectGuid>{4F5EC781-8B57-4E2D-AF44-C053D656AE9E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>tests</RootNamespace>
+    <RootNamespace>static</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>benchmark</ProjectName>
+    <ProjectName>static-renderer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -156,16 +156,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="tests.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="testAccelerators.h" />
-    <ClInclude Include="testPointLocators.h" />
+    <ClCompile Include="static.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\spectral-photon-mapping\spectral-photon-mapping.vcxproj">
       <Project>{842fed16-3939-4bfb-8987-5e2f9f2b85e3}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="scenes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

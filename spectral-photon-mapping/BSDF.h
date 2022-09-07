@@ -21,7 +21,7 @@ namespace Spectral {
 	const auto makeBSDF = std::make_shared<BSDF>;
 }
 
-namespace RGB {
+namespace Tristimulus {
 	using BSDF = ::BSDF<Color>;
 	using spBSDF = std::shared_ptr<BSDF>;
 	const auto makeBSDF = std::make_shared<BSDF>;

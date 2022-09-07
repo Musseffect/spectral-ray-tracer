@@ -40,11 +40,11 @@
     <Filter Include="Исходные файлы\Core\PrimitiveLocators">
       <UniqueIdentifier>{c7576a76-101b-42fe-aa1e-89bc4672aefb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Исходные файлы\Core\Color">
+      <UniqueIdentifier>{77a52ca0-2780-4ddc-898c-a64488ce67cd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="Random.cpp">
       <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
@@ -52,9 +52,6 @@
       <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
     <ClCompile Include="BBox3D.cpp">
-      <Filter>Исходные файлы\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Color.cpp">
       <Filter>Исходные файлы\Core</Filter>
     </ClCompile>
     <ClCompile Include="BxDF.cpp">
@@ -135,11 +132,23 @@
     <ClCompile Include="Accelerators\Primitive Locators\Grid.cpp">
       <Filter>Исходные файлы\Core\PrimitiveLocators</Filter>
     </ClCompile>
+    <ClCompile Include="Color.cpp">
+      <Filter>Исходные файлы\Core\Color</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorUtils.cpp">
+      <Filter>Исходные файлы\Core\Color</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorSampler.cpp">
+      <Filter>Исходные файлы\Core\Color</Filter>
+    </ClCompile>
+    <ClCompile Include="Illuminants.cpp">
+      <Filter>Исходные файлы\Core\Color</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorSpaces.cpp">
+      <Filter>Исходные файлы\Core\Color</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Color.h">
-      <Filter>Исходные файлы\Core</Filter>
-    </ClInclude>
     <ClInclude Include="BBox3D.h">
       <Filter>Исходные файлы\Core</Filter>
     </ClInclude>
@@ -292,6 +301,24 @@
     </ClInclude>
     <ClInclude Include="BSphere3D.h">
       <Filter>Исходные файлы\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Color.h">
+      <Filter>Исходные файлы\Core\Color</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorSampler.h">
+      <Filter>Исходные файлы\Core\Color</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorUtils.h">
+      <Filter>Исходные файлы\Core\Color</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorSpaces.h">
+      <Filter>Исходные файлы\Core\Color</Filter>
+    </ClInclude>
+    <ClInclude Include="Illuminants.h">
+      <Filter>Исходные файлы\Core\Color</Filter>
+    </ClInclude>
+    <ClInclude Include="UPT.h">
+      <Filter>Исходные файлы\Tracers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

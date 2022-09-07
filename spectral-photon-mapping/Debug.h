@@ -21,6 +21,25 @@ namespace Debug {
 		void setCamera(const std::shared_ptr<Camera>& camera) {
 			this->camera = camera;
 		}
+		// http://casedefault.com/articles/why-every-raytracer-needs-a-heatmap.html
+		Image<float> renderHeatmap(int width, int height, int samples) {
+			Image<float> image(width, height, rgb(0.0));
+			vec2 resolution(width, height);
+			float maxValue = 0.0;
+			for (int k = 0; k < samples; k++) {
+				for (int j = 0; j < height; j++) {
+					for (int i = 0; i < width; i++) {
+						vec2 aaShift = Sampling::uniformDisk(1.0f);
+						vec2 ndc = (2.0f * vec2(i, j) + aaShift - resolution + vec2(1.0f)) / resolution;
+						Ray ray = camera->generateRay(ndc);
+						image(i, j) += scene->intersectionCost(ray);
+						maxValue = std::max(maxValue, image(i, j));
+					}
+				}
+			}
+			image.multiply(1.0f / maxValue);
+			return image;
+		}
 		Image<rgb> renderObjectColor(int width, int height, int iteration) const {
 			Image<rgb> image(width, height, rgb(0.0));
 			std::vector<vec3> colors;
@@ -141,7 +160,7 @@ namespace Debug {
 					}
 				}
 			}
-			image.multiply(1.0f / float(iterations));
+			image.multiply(1.0f / static_cast<float>(iterations));
 			return image;
 		}
 	};

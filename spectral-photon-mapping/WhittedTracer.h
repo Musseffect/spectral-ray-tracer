@@ -1,8 +1,8 @@
 #pragma once
 
 
-namespace RGB {
-	namespace Whitted {
+namespace Whitted {
+	namespace Tristimulus {
 		struct Settings {
 			int maxDepth;
 
