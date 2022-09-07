@@ -24,5 +24,17 @@
     <ClInclude Include="Ray.h">
       <Filter>Header Files\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Segment.h">
+      <Filter>Header Files\Core\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="Line.h">
+      <Filter>Header Files\Core\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="Circle.h">
+      <Filter>Header Files\Core\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="Arch.h">
+      <Filter>Header Files\Core\Shapes</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
